@@ -19,15 +19,8 @@ metadata {
 
         capability "Switch Level"   // until we get a Window Shade Level capability
 
-// taken from roller shutter 2
-//        fingerprint mfr: "010F", prod: "0302"
-//        fingerprint deviceId: "0x1106", inClusters: "0x8E,0x72,0x86,0x70,0x85,0x73,0x32,0x26,0x31,0x25,0x91,0x75"
-
-// taken from official Smartthings Z-Wave Window Shade
-        fingerprint type: "0x1107", cc: "0x5E,0x26", deviceJoinName: "Window Shade"
-        fingerprint type: "0x9A00", cc: "0x5E,0x26", deviceJoinName: "Window Shade"
-//        fingerprint mfr:"026E", prod:"4353", model:"5A31", deviceJoinName: "Window Blinds"
-//        fingerprint mfr:"026E", prod:"5253", model:"5A31", deviceJoinName: "Roller Shade"
+        //zw:Ls type:1106 mfr:010F prod:0303 model:1000 ver:5.00 zwv:6.02 lib:03 cc:5E,55,98,9F,56,6C,22 sec:26,85,8E,59,86,72,5A,73,32,70,71,75,60,5B,7A role:05 ff:9900 ui:9900 ep:['1106 5E,98,9F,6C,22', '1106 5E,98,9F,6C,22']
+        fingerprint mfr: "010F", prod: "0303", model: "1000"
     }
 
     tiles(scale: 2) {
