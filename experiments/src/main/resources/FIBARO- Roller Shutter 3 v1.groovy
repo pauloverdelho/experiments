@@ -1,14 +1,14 @@
 /**
- *	Fibaro Roller Shutter 3
+ * 	Fibaro Roller Shutter 3
  */
 metadata {
-    definition (name: "Fibaro Roller Shutter 3", namespace: "FibarGroup", author: "Paulo Verdelho", ocfDeviceType: "oic.d.blind") {
+    definition(name: "Fibaro Roller Shutter 3", namespace: "smartthings", author: "Paulo Verdelho", ocfDeviceType: "oic.d.blind") {
         capability "Window Shade"
+        capability "Actuator"
+        capability "Sensor"
         capability "Energy Meter"
         capability "Power Meter"
         capability "Configuration"
-
-        capability "Switch Level"   // until we get a Window Shade Level capability
 
         command "reset"
         command "calibrate"
@@ -17,60 +17,84 @@ metadata {
         command "openNow"
         command "refresh"
 
-        fingerprint mfr: "010F", prod: "0102", model: "2000"
-        fingerprint mfr: "010F", prod: "0102", model: "1000"
-        fingerprint mfr: "010F", prod: "0102", model: "3000"
+        capability "Switch Level"   // until we get a Window Shade Level capability
+
+// taken from roller shutter 2
+//        fingerprint mfr: "010F", prod: "0302"
+//        fingerprint deviceId: "0x1106", inClusters: "0x8E,0x72,0x86,0x70,0x85,0x73,0x32,0x26,0x31,0x25,0x91,0x75"
+
+// taken from official Smartthings Z-Wave Window Shade
+        fingerprint type: "0x1107", cc: "0x5E,0x26", deviceJoinName: "Window Shade"
+        fingerprint type: "0x9A00", cc: "0x5E,0x26", deviceJoinName: "Window Shade"
+//        fingerprint mfr:"026E", prod:"4353", model:"5A31", deviceJoinName: "Window Blinds"
+//        fingerprint mfr:"026E", prod:"5253", model:"5A31", deviceJoinName: "Roller Shade"
     }
 
-    tiles (scale: 2) {
-        multiAttributeTile(name:"windowShade", type: "lighting", width: 6, height: 4){
-            tileAttribute ("device.windowShade", key: "PRIMARY_CONTROL") {
+    simulator {
+        status "open": "command: 2603, payload: FF"
+        status "closed": "command: 2603, payload: 00"
+        status "10%": "command: 2603, payload: 0A"
+        status "66%": "command: 2603, payload: 42"
+        status "99%": "command: 2603, payload: 63"
+        status "battery 100%": "command: 8003, payload: 64"
+        status "battery low": "command: 8003, payload: FF"
+
+        // reply messages
+        reply "2001FF,delay 1000,2602": "command: 2603, payload: 10 FF FE"
+        reply "200100,delay 1000,2602": "command: 2603, payload: 60 00 FE"
+        reply "200142,delay 1000,2602": "command: 2603, payload: 10 42 FE"
+        reply "200163,delay 1000,2602": "command: 2603, payload: 10 63 FE"
+    }
+
+    tiles(scale: 2) {
+        multiAttributeTile(name: "windowShade", type: "lighting", width: 6, height: 4) {
+            tileAttribute("device.windowShade", key: "PRIMARY_CONTROL") {
                 attributeState "unknown", label: '${name}', action: "calibrate", icon: "st.shades.shade-closed", backgroundColor: "#ffffff"
-                attributeState "closed", label: '${name}', action: "open", icon: "st.shades.shade-closed", backgroundColor: "#ffffff", nextState:"opening"
-                attributeState "open", label: '${name}', action: "close", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState:"closing"
-                attributeState "opening", label:'${name}', action:"stop", icon:"st.shades.shade-opening", backgroundColor:"#00a0dc", nextState:"partially open"
-                attributeState "closing", label:'${name}', action:"stop", icon:"st.shades.shade-closing", backgroundColor:"#00a0dc", nextState:"partially open"
-                attributeState "partially open", label:'${name}', action:"close", icon:"st.shades.shade-open", backgroundColor:"#00a0dc", nextState:"closing"
+                attributeState "closed", label: '${name}', action: "open", icon: "st.shades.shade-closed", backgroundColor: "#ffffff", nextState: "opening"
+                attributeState "open", label: '${name}', action: "close", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState: "closing"
+                attributeState "opening", label: '${name}', action: "stop", icon: "st.shades.shade-opening", backgroundColor: "#00a0dc", nextState: "partially open"
+                attributeState "closing", label: '${name}', action: "stop", icon: "st.shades.shade-closing", backgroundColor: "#00a0dc", nextState: "partially open"
+                attributeState "partially open", label: '${name}', action: "close", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState: "closing"
             }
-            tileAttribute("device.multiStatus", key:"SECONDARY_CONTROL") {
-                attributeState("multiStatus", label:'${currentValue}')
+            tileAttribute("device.multiStatus", key: "SECONDARY_CONTROL") {
+                attributeState("multiStatus", label: '${currentValue}')
             }
-            tileAttribute ("device.level", key: "SLIDER_CONTROL") {
-                attributeState "level", action:"setLevel"
+            tileAttribute("device.level", key: "SLIDER_CONTROL") {
+                attributeState "level", action: "setLevel"
             }
         }
         valueTile("open", "device.open", decoration: "flat", width: 2, height: 2) {
-            state "open", label:'Open', action:"openNow", icon:"st.shades.shade-opening"
+            state "open", label: 'Open', action: "openNow", icon: "st.shades.shade-opening"
         }
         valueTile("close", "device.close", decoration: "flat", width: 2, height: 2) {
-            state "close", label:'Close', action:"closeNow", icon:"st.shades.shade-closing"
+            state "close", label: 'Close', action: "closeNow", icon: "st.shades.shade-closing"
         }
         valueTile("stop", "device.stop", decoration: "flat", width: 2, height: 2) {
-            state "stop", label:'Stop', action:"stop", icon: "st.Home.home30"
+            state "stop", label: 'Stop', action: "stop", icon: "st.Home.home30"
         }
         valueTile("power", "device.power", decoration: "flat", width: 2, height: 1) {
-            state "power", label:'${currentValue}\nW'
+            state "power", label: '${currentValue}\nW'
         }
         valueTile("energy", "device.energy", decoration: "flat", width: 2, height: 1) {
-            state "energy", label:'${currentValue}\nkWh'
+            state "energy", label: '${currentValue}\nkWh'
         }
         standardTile("refresh", "device.refresh", decoration: "flat", width: 2, height: 2) {
-            state "refresh", label:'Refresh', action:"refresh", icon:"st.secondary.refresh-icon"
+            state "refresh", label: 'Refresh', action: "refresh", icon: "st.secondary.refresh-icon"
         }
         valueTile("reset", "device.energy", decoration: "flat", width: 2, height: 1) {
-            state "reset", label:'reset kWh', action:"reset", icon: "st.secondary.tools"
+            state "reset", label: 'reset kWh', action: "reset", icon: "st.secondary.tools"
         }
         valueTile("calibrate", "device.calibrate", decoration: "flat", width: 2, height: 1) {
-            state "calibrate", label:'Calibrate', action:"calibrate", icon: "st.contact.contact.closed"
+            state "calibrate", label: 'Calibrate', action: "calibrate", icon: "st.contact.contact.closed"
         }
 
         main "windowShade"
-        details(["windowShade","open", "close", "stop", "power", "energy", "refresh", "reset", "calibrate"])
+        details(["windowShade", "open", "close", "stop", "power", "energy", "refresh", "reset", "calibrate"])
 
     }
 
     preferences {
-        input (
+        input(
                 title: "Fibaro Roller Shutter 3 manual",
                 description: "Tap to view the manual.",
                 image: "http://manuals.fibaro.com/wp-content/uploads/2017/02/d2_icon.png",
@@ -80,14 +104,14 @@ metadata {
         )
 
         parameterMap().each {
-            input (
+            input(
                     title: "${it.num}. ${it.title}",
                     description: it.descr,
                     type: "paragraph",
                     element: "paragraph"
             )
 
-            input (
+            input(
                     name: it.key,
                     title: null,
                     type: it.type,
@@ -98,7 +122,7 @@ metadata {
             )
         }
 
-        input ( name: "logging", title: "Logging", type: "boolean", required: false )
+        input(name: "logging", title: "Logging", type: "boolean", required: false)
     }
 }
 
@@ -136,37 +160,37 @@ def setLevel(value, duration = null) {
 }
 
 def reset() {
-    logging("${device.displayName} - Executing reset()","info")
+    logging("${device.displayName} - Executing reset()", "info")
     def cmds = []
     cmds << zwave.meterV3.meterReset()
     cmds << zwave.meterV3.meterGet(scale: 0)
-    encapSequence(cmds,1000)
+    encapSequence(cmds, 1000)
 }
 
 def refresh() {
-    logging("${device.displayName} - Executing refresh()","info")
+    logging("${device.displayName} - Executing refresh()", "info")
     def cmds = []
     cmds << zwave.basicV1.basicGet()
     cmds << zwave.meterV3.meterGet(scale: 0)
     cmds << zwave.meterV3.meterGet(scale: 2)
     cmds << zwave.switchMultilevelV1.switchMultilevelGet()
     cmds << zwave.sensorMultilevelV5.sensorMultilevelGet()
-    encapSequence(cmds,1000)
+    encapSequence(cmds, 1000)
 }
 
-def installed(){
-    log.debug "installed()"
-    sendEvent(name: "checkInterval", value: 1920, displayed: false, data: [protocol: "zwave", hubHardwareId: device.hub.hardwareID])
-    response(refresh())
-}
-
-def configure(){
+def configure() {
     sendEvent(name: "windowShade", value: "closed", displayed: "true") //set the initial state to closed.
 }
 
+def installed() {
+    log.debug "installed()"
+    sendEvent(name: "checkInterval", value: 1920, displayed: false, data: [protocol: "zwave", hubHardwareId: device.hub.hardwareID, offlinePingable: "1"])
+    response(refresh())
+}
+
 def updated() {
-    if ( state.lastUpdated && (now() - state.lastUpdated) < 500 ) return
-    logging("${device.displayName} - Executing updated()","info")
+    if (state.lastUpdated && (now() - state.lastUpdated) < 500) return
+    logging("${device.displayName} - Executing updated()", "info")
     runIn(3, "syncStart")
     state.lastUpdated = now()
 }
@@ -174,16 +198,18 @@ def updated() {
 def syncStart() {
     boolean syncNeeded = false
     parameterMap().each {
-        if(settings."$it.key" != null) {
-            if (state."$it.key" == null) { state."$it.key" = [value: null, state: "synced"] }
-            if (state."$it.key".value != settings."$it.key" as Integer || state."$it.key".state in ["notSynced","inProgress"]) {
+        if (settings."$it.key" != null) {
+            if (state."$it.key" == null) {
+                state."$it.key" = [value: null, state: "synced"]
+            }
+            if (state."$it.key".value != settings."$it.key" as Integer || state."$it.key".state in ["notSynced", "inProgress"]) {
                 state."$it.key".value = settings."$it.key" as Integer
                 state."$it.key".state = "notSynced"
                 syncNeeded = true
             }
         }
     }
-    if ( syncNeeded ) {
+    if (syncNeeded) {
         logging("${device.displayName} - starting sync.", "info")
         multiStatusEvent("Sync in progress.", true, true)
         syncNext()
@@ -191,10 +217,10 @@ def syncStart() {
 }
 
 private syncNext() {
-    logging("${device.displayName} - Executing syncNext()","info")
+    logging("${device.displayName} - Executing syncNext()", "info")
     def cmds = []
-    for ( param in parameterMap() ) {
-        if ( state."$param.key"?.value != null && state."$param.key"?.state in ["notSynced","inProgress"] ) {
+    for (param in parameterMap()) {
+        if (state."$param.key"?.value != null && state."$param.key"?.state in ["notSynced", "inProgress"]) {
             multiStatusEvent("Sync in progress. (param: ${param.num})", true)
             state."$param.key"?.state = "inProgress"
             cmds << response(encap(zwave.configurationV2.configurationSet(configurationValue: intToParam(state."$param.key".value, param.size), parameterNumber: param.num, size: param.size)))
@@ -204,40 +230,40 @@ private syncNext() {
     }
     if (cmds) {
         runIn(10, "syncCheck")
-        sendHubCommand(cmds,1000)
+        sendHubCommand(cmds, 1000)
     } else {
         runIn(1, "syncCheck")
     }
 }
 
 private syncCheck() {
-    logging("${device.displayName} - Executing syncCheck()","info")
+    logging("${device.displayName} - Executing syncCheck()", "info")
     def failed = []
     def incorrect = []
     def notSynced = []
     parameterMap().each {
-        if (state."$it.key"?.state == "incorrect" ) {
+        if (state."$it.key"?.state == "incorrect") {
             incorrect << it
-        } else if ( state."$it.key"?.state == "failed" ) {
+        } else if (state."$it.key"?.state == "failed") {
             failed << it
-        } else if ( state."$it.key"?.state in ["inProgress","notSynced"] ) {
+        } else if (state."$it.key"?.state in ["inProgress", "notSynced"]) {
             notSynced << it
         }
     }
     if (failed) {
-        logging("${device.displayName} - Sync failed! Check parameter: ${failed[0].num}","info")
+        logging("${device.displayName} - Sync failed! Check parameter: ${failed[0].num}", "info")
         sendEvent(name: "syncStatus", value: "failed")
         multiStatusEvent("Sync failed! Check parameter: ${failed[0].num}", true, true)
     } else if (incorrect) {
-        logging("${device.displayName} - Sync mismatch! Check parameter: ${incorrect[0].num}","info")
+        logging("${device.displayName} - Sync mismatch! Check parameter: ${incorrect[0].num}", "info")
         sendEvent(name: "syncStatus", value: "incomplete")
         multiStatusEvent("Sync mismatch! Check parameter: ${incorrect[0].num}", true, true)
     } else if (notSynced) {
-        logging("${device.displayName} - Sync incomplete!","info")
+        logging("${device.displayName} - Sync incomplete!", "info")
         sendEvent(name: "syncStatus", value: "incomplete")
         multiStatusEvent("Sync incomplete! Open settings and tap Done to try again.", true, true)
     } else {
-        logging("${device.displayName} - Sync Complete","info")
+        logging("${device.displayName} - Sync Complete", "info")
         sendEvent(name: "syncStatus", value: "synced")
         multiStatusEvent("Sync OK.", true, true)
     }
@@ -250,22 +276,21 @@ private multiStatusEvent(String statusValue, boolean force = false, boolean disp
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport cmd) {
-    def paramKey = parameterMap().find( {it.num == cmd.parameterNumber } )?.key
+    def paramKey = parameterMap().find({ it.num == cmd.parameterNumber })?.key
     logging("${device.displayName} - Parameter ${paramKey} value is ${cmd.scaledConfigurationValue} expected " + state?."$paramKey"?.value, "info")
     state."$paramKey"?.state = (state."$paramKey"?.value == cmd.scaledConfigurationValue) ? "synced" : "incorrect"
     syncNext()
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.applicationstatusv1.ApplicationRejectedRequest cmd) {
-    logging("${device.displayName} - rejected request!","warn")
-    for ( param in parameterMap() ) {
-        if ( state."$param.key"?.state == "inProgress" ) {
+    logging("${device.displayName} - rejected request!", "warn")
+    for (param in parameterMap()) {
+        if (state."$param.key"?.state == "inProgress") {
             state."$param.key"?.state = "failed"
             break
         }
     }
 }
-
 
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd) {
     handleLevelReport(cmd)
@@ -280,7 +305,7 @@ def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv3.SwitchMultilevelR
 }
 
 private handleLevelReport(physicalgraph.zwave.Command cmd) {
-    logging("${device.displayName} - LevelReport received, $cmd","info")
+    logging("${device.displayName} - LevelReport received, $cmd", "info")
     def descriptionText = null
     def shadeValue
 
@@ -305,15 +330,15 @@ private handleLevelReport(physicalgraph.zwave.Command cmd) {
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv5.SensorMultilevelReport cmd) {
-    logging("${device.displayName} - SensorMultilevelReport received, $cmd","info")
-    if ( cmd.sensorType == 4 ) {
+    logging("${device.displayName} - SensorMultilevelReport received, $cmd", "info")
+    if (cmd.sensorType == 4) {
         sendEvent(name: "power", value: cmd.scaledSensorValue, unit: "W")
         multiStatusEvent("${(device.currentValue("power") ?: "0.0")} W | ${(device.currentValue("energy") ?: "0.00")} kWh")
     }
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.meterv3.MeterReport cmd) {
-    logging("${device.displayName} - MeterReport received, value: ${cmd.scaledMeterValue} scale: ${cmd.scale}","info")
+    logging("${device.displayName} - MeterReport received, value: ${cmd.scaledMeterValue} scale: ${cmd.scale}", "info")
     switch (cmd.scale) {
         case 0:
             sendEvent([name: "energy", value: cmd.scaledMeterValue, unit: "kWh"])
@@ -326,8 +351,13 @@ def zwaveEvent(physicalgraph.zwave.commands.meterv3.MeterReport cmd) {
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv3.SwitchMultilevelStopLevelChange cmd) {
-    [ createEvent(name: "windowShade", value: "partially open", displayed: false, descriptionText: "$device.displayName shade stopped"),
-      response(zwave.switchMultilevelV1.switchMultilevelGet().format()) ]
+    [createEvent(name: "windowShade", value: "partially open", displayed: false, descriptionText: "$device.displayName shade stopped"),
+     response(zwave.switchMultilevelV1.switchMultilevelGet().format())]
+}
+
+def zwaveEvent(physicalgraph.zwave.Command cmd) {
+    log.debug "${device.displayName} - Unhandled $cmd"
+    return []
 }
 
 def parse(String description) {
@@ -381,12 +411,12 @@ private logging(text, type = "debug") {
 }
 
 private secEncap(physicalgraph.zwave.Command cmd) {
-    logging("${device.displayName} - encapsulating command using Secure Encapsulation, command: $cmd","info")
+    logging("${device.displayName} - encapsulating command using Secure Encapsulation, command: $cmd", "info")
     zwave.securityV1.securityMessageEncapsulation().encapsulate(cmd).format()
 }
 
 private crcEncap(physicalgraph.zwave.Command cmd) {
-    logging("${device.displayName} - encapsulating command using CRC16 Encapsulation, command: $cmd","info")
+    logging("${device.displayName} - encapsulating command using CRC16 Encapsulation, command: $cmd", "info")
     zwave.crc16EncapV1.crc16Encap().encapsulate(cmd).format()
 }
 
@@ -406,20 +436,20 @@ private encap(Map encapMap) {
 private encap(physicalgraph.zwave.Command cmd) {
     if (zwaveInfo.zw.contains("s")) {
         secEncap(cmd)
-    } else if (zwaveInfo.cc.contains("56")){
+    } else if (zwaveInfo.cc.contains("56")) {
         crcEncap(cmd)
     } else {
-        logging("${device.displayName} - no encapsulation supported for command: $cmd","info")
+        logging("${device.displayName} - no encapsulation supported for command: $cmd", "info")
         cmd.format()
     }
 }
 
-private encapSequence(cmds, Integer delay=250) {
-    delayBetween(cmds.collect{ encap(it) }, delay)
+private encapSequence(cmds, Integer delay = 250) {
+    delayBetween(cmds.collect { encap(it) }, delay)
 }
 
 private encapSequence(cmds, Integer delay, Integer ep) {
-    delayBetween(cmds.collect{ encap(it, ep) }, delay)
+    delayBetween(cmds.collect { encap(it, ep) }, delay)
 }
 
 private List intToParam(Long value, Integer size = 1) {
@@ -430,6 +460,7 @@ private List intToParam(Long value, Integer size = 1) {
     }
     return result
 }
+
 private Map cmdVersions() {
     [0x5E: 1, 0x86: 1, 0x72: 2, 0x59: 1, 0x73: 1, 0x22: 1, 0x31: 5, 0x32: 3, 0x71: 3, 0x56: 1, 0x98: 1, 0x7A: 2, 0x20: 1, 0x5A: 1, 0x85: 2, 0x26: 3, 0x8E: 2, 0x60: 3, 0x70: 2, 0x75: 2, 0x27: 1]
 }
