@@ -4,12 +4,10 @@
 metadata {
     definition (name: "Fibaro Roller Shutter 3", namespace: "FibarGroup", author: "Paulo Verdelho", ocfDeviceType: "oic.d.blind") {
         capability "Window Shade"
-        capability "Refresh"
         capability "Energy Meter"
         capability "Power Meter"
         capability "Configuration"
 
-//        capability "Switch"
         capability "Switch Level"   // until we get a Window Shade Level capability
 
         command "reset"
@@ -17,6 +15,7 @@ metadata {
         command "stop"
         command "closeNow"
         command "openNow"
+        command "refresh"
 
         fingerprint mfr: "010F", prod: "0102", model: "2000"
         fingerprint mfr: "010F", prod: "0102", model: "1000"
@@ -105,11 +104,15 @@ metadata {
 
 def open() { encap(zwave.basicV1.basicSet(value: 99)) }
 
+def close() { encap(zwave.basicV1.basicSet(value: 0)) }
+
+def presetPosition() {
+    setLevel(preset ?: state.preset ?: 99)
+}
+
 def openNow() {
     setLevel(99)
 }
-
-def close() { encap(zwave.basicV1.basicSet(value: 0)) }
 
 def closeNow() {
     setLevel(0)
@@ -295,7 +298,7 @@ private handleLevelReport(physicalgraph.zwave.Command cmd) {
     def levelEvent = createEvent(name: "level", value: level, unit: "%", displayed: false)
     def stateEvent = createEvent(name: "windowShade", value: shadeValue, descriptionText: descriptionText, isStateChange: levelEvent.isStateChange)
 
-    logging("${device.displayName} - Setting level to ${level} and windowsShade status to ${shadeValue}", "info")
+    logging("${device.displayName} - Setting level to ${level} and windowsShade to ${shadeValue}", "info")
 
     def result = [stateEvent, levelEvent]
     result
