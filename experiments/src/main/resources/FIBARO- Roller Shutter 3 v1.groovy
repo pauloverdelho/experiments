@@ -30,22 +30,6 @@ metadata {
 //        fingerprint mfr:"026E", prod:"5253", model:"5A31", deviceJoinName: "Roller Shade"
     }
 
-    simulator {
-        status "open": "command: 2603, payload: FF"
-        status "closed": "command: 2603, payload: 00"
-        status "10%": "command: 2603, payload: 0A"
-        status "66%": "command: 2603, payload: 42"
-        status "99%": "command: 2603, payload: 63"
-        status "battery 100%": "command: 8003, payload: 64"
-        status "battery low": "command: 8003, payload: FF"
-
-        // reply messages
-        reply "2001FF,delay 1000,2602": "command: 2603, payload: 10 FF FE"
-        reply "200100,delay 1000,2602": "command: 2603, payload: 60 00 FE"
-        reply "200142,delay 1000,2602": "command: 2603, payload: 10 42 FE"
-        reply "200163,delay 1000,2602": "command: 2603, payload: 10 63 FE"
-    }
-
     tiles(scale: 2) {
         multiAttributeTile(name: "windowShade", type: "lighting", width: 6, height: 4) {
             tileAttribute("device.windowShade", key: "PRIMARY_CONTROL") {
