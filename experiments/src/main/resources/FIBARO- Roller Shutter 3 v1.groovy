@@ -30,9 +30,8 @@ metadata {
                 attributeState "closed", label: '${name}', action: "open", icon: "st.shades.shade-closed", backgroundColor: "#ffffff", nextState:"opening"
                 attributeState "open", label: '${name}', action: "close", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState:"closing"
                 attributeState "opening", label:'${name}', action:"stop", icon:"st.shades.shade-opening", backgroundColor:"#00a0dc", nextState:"partially open"
-                attributeState "closing", label:'${name}', action:"stop", icon:"st.shades.shade-closing", backgroundColor:"#00a0dc", nextState:"partially closed"
+                attributeState "closing", label:'${name}', action:"stop", icon:"st.shades.shade-closing", backgroundColor:"#00a0dc", nextState:"partially open"
                 attributeState "partially open", label:'${name}', action:"close", icon:"st.shades.shade-open", backgroundColor:"#00a0dc", nextState:"closing"
-                attributeState "partially closed", label:'partially open', action:"open", icon:"st.shades.shade-open", backgroundColor:"#00a0dc", nextState:"opening"
             }
             tileAttribute("device.multiStatus", key:"SECONDARY_CONTROL") {
                 attributeState("multiStatus", label:'${currentValue}')
