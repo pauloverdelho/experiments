@@ -3,13 +3,14 @@
  */
 metadata {
     definition (name: "Fibaro Roller Shutter 3", namespace: "FibarGroup", author: "Paulo Verdelho", ocfDeviceType: "oic.d.blind") {
-        capability "Switch Level"
         capability "Window Shade"
+        capability "Refresh"
         capability "Energy Meter"
         capability "Power Meter"
         capability "Configuration"
-        capability "Health Check"
-        capability "Refresh"
+
+//        capability "Switch"
+        capability "Switch Level"   // until we get a Window Shade Level capability
 
         command "reset"
         command "calibrate"
@@ -119,7 +120,6 @@ def stop() { encap(zwave.switchMultilevelV3.switchMultilevelStopLevelChange()) }
 
 def calibrate() { encap(zwave.configurationV2.configurationSet(configurationValue: intToParam(2, 1), parameterNumber: 150, size: 1)) }
 
-
 def setLevel(value, duration = null) {
     logging("${device.displayName} - Executing setLevel(${value.inspect()})")
     Integer level = value as Integer
@@ -150,10 +150,6 @@ def refresh() {
     cmds << zwave.switchMultilevelV1.switchMultilevelGet()
     cmds << zwave.sensorMultilevelV5.sensorMultilevelGet()
     encapSequence(cmds,1000)
-}
-
-def ping(){
-    refresh()
 }
 
 def installed(){
