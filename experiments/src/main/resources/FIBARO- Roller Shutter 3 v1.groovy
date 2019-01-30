@@ -4,21 +4,20 @@
 metadata {
     definition(name: "Fibaro Roller Shutter 3", namespace: "smartthings", author: "Paulo Verdelho", ocfDeviceType: "oic.d.blind") {
         capability "Window Shade"
-        capability "Actuator"
-        capability "Sensor"
         capability "Energy Meter"
         capability "Power Meter"
         capability "Configuration"
+        capability "Health Check"
 
         command "reset"
         command "calibrate"
         command "stop"
         command "closeNow"
         command "openNow"
-        command "refresh"
 
         capability "Switch Level"   // until we get a Window Shade Level capability
 
+        // RAW information on device
         //zw:Ls type:1106 mfr:010F prod:0303 model:1000 ver:5.00 zwv:6.02 lib:03 cc:5E,55,98,9F,56,6C,22 sec:26,85,8E,59,86,72,5A,73,32,70,71,75,60,5B,7A role:05 ff:9900 ui:9900 ep:['1106 5E,98,9F,6C,22', '1106 5E,98,9F,6C,22']
         fingerprint mfr: "010F", prod: "0303", model: "1000"
     }
