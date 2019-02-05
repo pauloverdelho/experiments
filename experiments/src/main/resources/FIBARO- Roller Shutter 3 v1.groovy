@@ -8,6 +8,7 @@ metadata {
         capability "Power Meter"
         capability "Configuration"
         capability "Health Check"
+        capability "Refresh"
 
         command "reset"
         command "calibrate"
