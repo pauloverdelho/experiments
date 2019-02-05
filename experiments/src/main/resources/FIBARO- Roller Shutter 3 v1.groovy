@@ -2,7 +2,7 @@
  * 	Fibaro Roller Shutter 3
  */
 metadata {
-    definition(name: "Fibaro Roller Shutter 3", namespace: "smartthings", author: "Paulo Verdelho", ocfDeviceType: "oic.d.blind") {
+    definition(name: "Fibaro Roller Shutter 3", namespace: "FibarGroup", author: "Paulo Verdelho", ocfDeviceType: "oic.d.blind") {
         capability "Window Shade"
         capability "Energy Meter"
         capability "Power Meter"
