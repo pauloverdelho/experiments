@@ -155,6 +155,10 @@ def refresh() {
     encapSequence(cmds, 1000)
 }
 
+def ping(){
+    refresh()
+}
+
 def configure() {
     sendEvent(name: "windowShade", value: "closed", displayed: "true") //set the initial state to closed.
 }
