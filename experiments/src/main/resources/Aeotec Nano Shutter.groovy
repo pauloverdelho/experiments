@@ -32,20 +32,21 @@ metadata {
     }
 
     simulator {
-        status "on": "command: 9881, payload: 002503FF"
-        status "off": "command: 9881, payload: 00250300"
+        status "Open": "command: 9881, payload: FF"
+        status "Close": "command: 9881, payload: 00"
 
-        reply "9881002001FF,delay 200,9881002502": "command: 9881, payload: 002503FF"
-        reply "988100200100,delay 200,9881002502": "command: 9881, payload: 00250300"
+        reply "9881002001FF,delay 100,9881002502": "command: 9881, payload: FF"
+        reply "988100200100,delay 100,9881002502": "command: 9881, payload: 00"
     }
 
     tiles {
         standardTile("open", "device.switch", canChangeIcon: false) {
-            state "open", label: 'Open', action: "open", icon: "st.Transportation.transportation13", backgroundColor: "#00a0dc"
+            state "Open", label: 'Open', action: "close", icon: "st.Transportation.transportation13", backgroundColor: "#00a0dc", nextState: "Close"
+            state "Close", label: 'Close', action: "open", icon: "st.Transportation.transportation14", backgroundColor: "#ffffff", nextState: "Open"
         }
-        standardTile("close", "device.switch", canChangeIcon: false) {
-            state "close", label: 'Close', action: "close", icon: "st.Transportation.transportation14", backgroundColor: "#ffffff"
-        }
+        /*standardTile("close", "device.switch", canChangeIcon: false) {
+			state "Close", label: 'Close', action: "close", icon: "st.Transportation.transportation14", backgroundColor: "#ffffff"
+		}*/
         standardTile("stop", "device.switch", canChangeIcon: false) {
             state "default", label: 'Stop', action: "stop", icon: "st.switches.switch.stop", backgroundColor: "#00a0dc"
         }
@@ -83,16 +84,35 @@ def parse(description) {
     result
 }
 
+/**
+ *  COMMAND_CLASS_BASIC (0x20)
+ *  This command is being ignored in secure inclusion mode.
+ *
+ *  Short	value	0xFF for on, 0x00 for off
+ */
+
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd) {
     //createEvent(name: "on", value: cmd.value ? "up" : "down")
+    //name: "switch", value: cmd.value ? "on" : "off", type: "physical"
+    if (state.debug) log.debug "BasicReport(value:${cmd.value})"
+    createEvent(name: "switch", value: cmd.value ? "Open" : "Close", type: "physical")
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) {
     //createEvent(name: "off", value: cmd.value ? "up" : "down")
 }
 
+/**
+ *  COMMAND_CLASS_SWITCH_BINARY (0x25)
+ *
+ *  Short	value	0xFF for on, 0x00 for off
+ */
+
 def zwaveEvent(physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport cmd) {
     //createEvent(name: "on", value: cmd.value ? "up" : "down")
+    //name: "switch", value: cmd.value ? "on" : "off", type: "digital"
+    if (state.debug) log.debug "BinaryReport(value:${cmd.value})"
+    createEvent(name: "switch", value: cmd.value ? "Open" : "Close", type: "physical")
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.hailv1.Hail cmd) {
@@ -116,7 +136,7 @@ def zwaveEvent(physicalgraph.zwave.Command cmd) {
 }
 
 def open() {
-    log.debug("up")
+    //log.debug("up")
     commands([
             zwave.basicV1.basicSet(value: 0xFF),
             zwave.basicV1.basicGet()
@@ -124,7 +144,7 @@ def open() {
 }
 
 def close() {
-    log.debug("down")
+    //log.debug("down")
     commands([
             zwave.basicV1.basicSet(value: 0x00),
             zwave.basicV1.basicGet()
@@ -132,7 +152,7 @@ def close() {
 }
 
 def stop() {
-    log.debug("stop")
+    //log.debug("stop")
     commands([
             zwave.switchMultilevelV3.switchMultilevelStopLevelChange(),
             zwave.switchMultilevelV3.switchMultilevelGet()
@@ -148,7 +168,16 @@ def poll() {
 }
 
 def refresh() {
-    command(zwave.basicV1.basicGet())
+    commands([
+            zwave.basicV1.basicGet(),
+            zwave.configurationV1.configurationSet(parameterNumber: 85,size: 1, scaledConfigurationValue: 0), //set operation mode 1 (S1 = UP, S2 = DOWN)
+            zwave.configurationV1.configurationSet(parameterNumber: 80,size: 1, scaledConfigurationValue: 1), //report Basic Report to update status when controlled via switch
+            //zwave.configurationV1.configurationSet(parameterNumber: 120,size: 1, scaledConfigurationValue: 1),
+            //(Sets S1 external switch mode): 1 = reserved, 2 = 3-way switch mode, 3 = Push button mode, 4 = automatic identification mode
+            //zwave.configurationV1.configurationSet(parameterNumber: 121,size: 1, scaledConfigurationValue: 1),
+            //(Sets S1 external switch mode): 1 = reserved, 2 = 3-way switch mode, 3 = Push button mode, 4 = automatic identification mode
+            zwave.configurationV1.configurationSet(parameterNumber: 35,size: 1, scaledConfigurationValue: 30) //sets the total up/down time in seconds, this setting is used to calibrate the total up and down time.
+    ])
 }
 
 private command(physicalgraph.zwave.Command cmd) {
