@@ -1,3 +1,4 @@
+package handlers
 /**
  *  Qubino Flush Shutter
  *	Device Handler

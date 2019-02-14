@@ -1,3 +1,4 @@
+package handlers
 /**
  *  Copyright 2015 SmartThings
  *

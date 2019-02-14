@@ -1,3 +1,4 @@
+package handlers
 /**
  * 	Fibaro Roller Shutter 3
  */
@@ -17,7 +18,6 @@ metadata {
         command "openNow"
 
         capability "Switch Level"   // until we get a Window Shade Level capability
-        capability "Switch"         // so it can be shared with google assistant
 
         // RAW information on device
         //zw:Ls type:1106 mfr:010F prod:0303 model:1000 ver:5.00 zwv:6.02 lib:03 cc:5E,55,98,9F,56,6C,22 sec:26,85,8E,59,86,72,5A,73,32,70,71,75,60,5B,7A role:05 ff:9900 ui:9900 ep:['1106 5E,98,9F,6C,22', '1106 5E,98,9F,6C,22']
@@ -121,14 +121,6 @@ def closeNow() {
 }
 
 def stop() { encap(zwave.switchMultilevelV3.switchMultilevelStopLevelChange()) }
-
-def on() {
-    open()
-}
-
-def off() {
-    close()
-}
 
 def calibrate() { encap(zwave.configurationV2.configurationSet(configurationValue: intToParam(2, 1), parameterNumber: 150, size: 1)) }
 

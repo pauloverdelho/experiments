@@ -1,6 +1,7 @@
+package handlers
 /**
  *
- *  Aeotec Inc Dual Nano Switch with Energy Reading
+ *  Aeotec Inc Dual Nano Switch without Energy Reading
  *
  *  github: Eric Maycock (erocm123)
  *  Date: 2018-01-02
@@ -19,25 +20,20 @@
  *
  */
 
-//fingerprint mfr: "0086", model: "0084" // Aeon brand
-//fingerprint mfr: "0000", model: "0000" // Secure Pairing
-//inClusters:"0x5E,0x25,0x27,0x32,0x81,0x71,0x60,0x8E,0x2C,0x2B,0x70,0x86,0x72,0x73,0x85,0x59,0x98,0x7A,0x5A"
-//Aeotec Inc Dual Nano Switch with Energy Reading (ZW132)
-
 metadata {
-    definition (name: "Aeotec Inc (ZW132) Dual Nano Switch with Energy Reading", namespace: "erocm123", author: "Eric Maycock") {
+    definition (name: "Aeotec Inc (ZW140) Dual Nano Switch", namespace: "erocm123", author: "Eric Maycock") {
         capability "Actuator"
-        capability "Sensor"
         capability "Switch"
         capability "Polling"
         capability "Configuration"
         capability "Refresh"
-        capability "Energy Meter"
         capability "Power Meter"
+        capability "Energy Meter"
+        capability "Temperature Measurement"
         capability "Health Check"
 
-        fingerprint mfr: "0086", model: "0084" // Aeon brand
-        inClusters:"0x5E,0x25,0x27,0x32,0x81,0x71,0x60,0x8E,0x2C,0x2B,0x70,0x86,0x72,0x73,0x85,0x59,0x98,0x7A,0x5A"
+        fingerprint mfr: "0086", model: "008C" // Aeon brand
+        //inClusters:"0x5E,0x25,0x27,0x32,0x81,0x71,0x60,0x8E,0x2C,0x2B,0x70,0x86,0x72,0x73,0x85,0x59,0x98,0x7A,0x5A"
     }
 
     simulator {
@@ -67,34 +63,18 @@ metadata {
             state "NO" , label:'', action:"configuration.configure", icon:"st.secondary.configure"
             state "YES", label:'', action:"configuration.configure", icon:"https://github.com/erocm123/SmartThingsPublic/raw/master/devicetypes/erocm123/qubino-flush-1d-relay.src/configure@2x.png"
         }
-        valueTile("energy", "device.energy", decoration: "flat", width: 2, height: 2) {
-            state "default", label:'${currentValue} kWh'
-        }
-        valueTile("power", "device.power", decoration: "flat", width: 2, height: 2) {
-            state "default", label:'${currentValue} W'
-        }
-        valueTile("voltage", "device.voltage", decoration: "flat", width: 2, height: 2) {
-            state "default", label:'${currentValue} V'
-        }
-        valueTile("current", "device.current", decoration: "flat", width: 2, height: 2) {
-            state "default", label:'${currentValue} A'
-        }
-        standardTile("reset", "device.energy", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", label:'reset kWh', action:"reset"
-        }
 
         main(["switch","switch1", "switch2"])
-        details(["switch", "energy", "power", "voltage", "current",
+        details(["switch",
                  childDeviceTiles("all"),
-                 "refresh","configure",
-                 "reset"
+                 "refresh","configure"
         ])
     }
 }
 
 def parse(String description) {
     def result = []
-    def cmd = zwave.parse(description, [0x20: 1, 0x25: 1, 0x32: 3, 0x60: 3, 0x70: 1, 0x98: 1])
+    def cmd = zwave.parse(description)
     if (cmd) {
         result += zwaveEvent(cmd)
         logging("Parsed ${cmd} to ${result.inspect()}", 1)
@@ -156,62 +136,12 @@ def zwaveEvent(physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport cm
     }
 }
 
-def zwaveEvent(physicalgraph.zwave.commands.meterv3.MeterReport cmd, ep=null) {
-    logging("MeterReport $cmd : Endpoint: $ep", 2)
-    def result
-    def cmds = []
-    if (cmd.scale == 0) {
-        result = [name: "energy", value: cmd.scaledMeterValue, unit: "kWh"]
-    }
-    else if (cmd.scale == 1) {
-        result = [name: "energy", value: cmd.scaledMeterValue, unit: "kVAh"]
-    }
-    else if (cmd.scale == 4) {
-        result = [name: "voltage", value: cmd.scaledMeterValue, unit: "V"]
-    }
-    else if (cmd.scale == 5) {
-        result = [name: "current", value: cmd.scaledMeterValue, unit: "A"]
-    }
-    else {
-        result = [name: "power", value: cmd.scaledMeterValue, unit: "W"]
-    }
-    if (ep) {
-        def childDevice = childDevices.find{it.deviceNetworkId == "$device.deviceNetworkId-ep$ep"}
-        if (childDevice)
-            childDevice.sendEvent(result)
-    } else {
-        (1..2).each { endpoint ->
-            cmds << encap(zwave.meterV2.meterGet(scale: 0), endpoint)
-            cmds << encap(zwave.meterV2.meterGet(scale: 2), endpoint)
-        }
-        return [createEvent(result), response(commands(cmds))]
-    }
-}
-
 def zwaveEvent(physicalgraph.zwave.commands.multichannelv3.MultiChannelCmdEncap cmd) {
     logging("MultiChannelCmdEncap ${cmd}", 2)
     def encapsulatedCommand = cmd.encapsulatedCommand([0x32: 3, 0x25: 1, 0x20: 1])
     if (encapsulatedCommand) {
         zwaveEvent(encapsulatedCommand, cmd.sourceEndPoint as Integer)
     }
-}
-
-def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv5.SensorMultilevelReport cmd) {
-    logging("SensorMultilevelReport: $cmd", 2)
-    def map = [:]
-    switch (cmd.sensorType) {
-        case 1:
-            map.name = "temperature"
-            def cmdScale = cmd.scale == 1 ? "F" : "C"
-            map.value = convertTemperatureIfNeeded(cmd.scaledSensorValue, cmdScale, cmd.precision)
-            map.unit = getTemperatureScale()
-            logging("Temperature Report: $map.value", 2)
-            break;
-        default:
-            map.descriptionText = cmd.toString()
-    }
-
-    return createEvent(map)
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.manufacturerspecificv2.ManufacturerSpecificReport cmd) {
@@ -265,16 +195,14 @@ void childRefresh(String dni) {
     logging("childRefresh($dni)", 1)
     def cmds = []
     cmds << new physicalgraph.device.HubAction(command(encap(zwave.switchBinaryV1.switchBinaryGet(), channelNumber(dni))))
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.meterV2.meterGet(scale: 0), channelNumber(dni))))
-    cmds << new physicalgraph.device.HubAction(command(encap(zwave.meterV2.meterGet(scale: 2), channelNumber(dni))))
     sendHubCommand(cmds)
 }
 
 def poll() {
     logging("poll()", 1)
     commands([
-            command(encap(zwave.switchBinaryV1.switchBinaryGet(), 1)),
-            command(encap(zwave.switchBinaryV1.switchBinaryGet(), 2)),
+            encap(zwave.switchBinaryV1.switchBinaryGet(), 1),
+            encap(zwave.switchBinaryV1.switchBinaryGet(), 2),
     ])
 }
 
@@ -283,19 +211,6 @@ def refresh() {
     commands([
             encap(zwave.switchBinaryV1.switchBinaryGet(), 1),
             encap(zwave.switchBinaryV1.switchBinaryGet(), 2),
-            zwave.meterV2.meterGet(scale: 0),
-            zwave.meterV2.meterGet(scale: 2),
-            zwave.meterV2.meterGet(scale: 4),
-            zwave.meterV2.meterGet(scale: 5),
-            zwave.sensorMultilevelV5.sensorMultilevelGet(sensorType:1, scale:1)
-    ])
-}
-
-def reset() {
-    logging("reset()", 1)
-    commands([
-            zwave.meterV2.meterReset(),
-            zwave.meterV2.meterGet()
     ])
 }
 
@@ -452,19 +367,17 @@ def convertParam(number, value) {
 }
 
 private def logging(message, level) {
-    log.debug "$message"
-    /*  if (logLevel > 0) {
-          switch (logLevel) {
-              case "1":
-                  if (level > 1)
-                      log.debug "$message"
-                  break
-              case "99":
-                  log.debug "$message"
-                  break
-          }
-      }
-    */
+    if (logLevel != "0") {
+        switch (logLevel) {
+            case "1":
+                if (level > 1)
+                    log.debug "$message"
+                break
+            case "99":
+                log.debug "$message"
+                break
+        }
+    }
 }
 
 /**
@@ -513,7 +426,7 @@ def integer2Cmd(value, size) {
     }
 }
 
-def zwaveEvent(physicalgraph.zwave.commands.configurationv1.ConfigurationReport cmd) {
+def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport cmd) {
     update_current_properties(cmd)
     logging("${device.displayName} parameter '${cmd.parameterNumber}' with a byte size of '${cmd.size}' is set to '${cmd2Integer(cmd.configurationValue)}'", 2)
 }
@@ -529,20 +442,8 @@ private encap(cmd, endpoint) {
 private command(physicalgraph.zwave.Command cmd) {
     if (state.sec) {
         zwave.securityV1.securityMessageEncapsulation().encapsulate(cmd).format()
-    }
-    else {
-        cmd.format()
-    }
-}
-
-def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityMessageEncapsulation cmd) {
-    def encapsulatedCommand = cmd.encapsulatedCommand([0x20: 1, 0x25: 1, 0x32: 3, 0x60: 3, 0x70: 1, 0x98: 1]) // can specify command class versions here like in zwave.parse
-    if (encapsulatedCommand) {
-        state.sec = 1
-        return zwaveEvent(encapsulatedCommand)
     } else {
-        log.warn "Unable to extract encapsulated cmd from $cmd"
-        createEvent(descriptionText: cmd.toString())
+        cmd.format()
     }
 }
 
@@ -581,18 +482,7 @@ private sendAlert() {
 def configuration_model() {
     '''
 <configuration>
-	<Value type="list" byteSize="1" index="3" label="3 OverCurrent Protection. " min="0" max="1" value="1" setting_type="zwave" fw="">
-        <Help>
-        The output load will automatically turn off after 30 seconds if current exceeds 10.5A.
-            0 - Disable
-            1 - Enable
-            Range: 0~1
-            Default: 1 (Previous State)
-        </Help>
-            <Item label="Disable" value="0" />
-            <Item label="Enable" value="1" />
-      </Value>
-    <Value type="list" byteSize="1" index="4" label="4 Overheat Protection. " min="0" max="1" value="0" setting_type="zwave" fw="">
+    <Value type="list" byteSize="1" index="4" label="Overheat Protection. " min="0" max="1" value="0" setting_type="zwave" fw="">
         <Help>
         The output load will automatically turn off after 30 seconds if temperature is over 100 C.
             0 - Disable
@@ -603,7 +493,7 @@ def configuration_model() {
             <Item label="Disable" value="0" />
             <Item label="Enable" value="1" />
       </Value>
-      <Value type="list" byteSize="1" index="20" label="20 After a power outage" min="0" max="2" value="0" setting_type="zwave" fw="">
+      <Value type="list" byteSize="1" index="20" label="After a power outage" min="0" max="2" value="0" setting_type="zwave" fw="">
         <Help>
         Configure the output load status after re-power from a power outage.
             0 - Last status before power outage.
@@ -616,7 +506,7 @@ def configuration_model() {
             <Item label="Always On" value="1" />
             <Item label="Always Off" value="2" />
       </Value>
-      <Value type="list" byteSize="1" index="80" label="80 Instant Notification" min="0" max="3" value="2" setting_type="zwave" fw="">
+      <Value type="list" byteSize="1" index="80" label="Instant Notification" min="0" max="3" value="2" setting_type="zwave" fw="">
         <Help>
         Notification report of status change sent to Group Assocation #1 when state of output load changes. Used to instantly update status to your gateway typically.
             0 - Nothing
@@ -631,7 +521,7 @@ def configuration_model() {
             <Item label="Basic Report CC" value="2" />
             <Item label="Hail when External Switch used" value="3" />
       </Value>
-      <Value type="list" byteSize="1" index="81" label="81 Notification send with S1 Switch" min="0" max="1" value="1" setting_type="zwave" fw="">
+      <Value type="list" byteSize="1" index="81" label="Notification send with S1 Switch" min="0" max="1" value="1" setting_type="zwave" fw="">
         <Help>
         To set which notification would be sent to the associated nodes in association group 3 when using the external switch 1 to switch the loads.
             0 = Send Nothing
@@ -642,7 +532,7 @@ def configuration_model() {
             <Item label="Nothing" value="0" />
             <Item label="Basic Set CC" value="1" />
       </Value>
-      <Value type="list" byteSize="1" index="82" label="82 Notification send with S2 Switch" min="0" max="1" value="1" setting_type="zwave" fw="">
+      <Value type="list" byteSize="1" index="82" label="Notification send with S2 Switch" min="0" max="1" value="1" setting_type="zwave" fw="">
         <Help>
         To set which notification would be sent to the associated nodes in association group 4 when using the external switch 2 to switch the loads.
             0 = Send Nothing
@@ -653,7 +543,7 @@ def configuration_model() {
             <Item label="Nothing" value="0" />
             <Item label="Basic Set CC" value="1" />
       </Value>
-      <Value type="list" byteSize="1" index="83" label="83 State of Internal LED use" min="0" max="2" value="0" setting_type="zwave" fw="">
+      <Value type="list" byteSize="1" index="83" label="State of Internal LED use" min="0" max="2" value="0" setting_type="zwave" fw="">
         <Help>
         Configure the state of LED when it is in 3 modes below:
             0 = Energy mode. The LED will follow the status (on/off).
@@ -664,117 +554,7 @@ def configuration_model() {
             <Item label="Momentary Mode" value="1" />
             <Item label="Night Light Mode" value="2" />
       </Value>
-      <Value type="list" byteSize="1" index="90" label="90 Threshold Enable/Disable" min="0" max="1" value="1" setting_type="zwave" fw="">
-        <Help>
-       		Enables/disables parameter 91 and 92 below:
-            0 = disabled
-            1 = enabled
-            Range: 0~1
-            Default: 1 (Previous State)
-        </Help>
-            <Item label="Disable" value="0" />
-            <Item label="Enable" value="1" />
-      </Value>
-      <Value type="number" byteSize="4" index="91" label="91 Watt Threshold" min="0" max="60000" value="25" setting_type="zwave" fw="">
-        <Help>
-       		The value here represents minimum change in wattage (in terms of wattage) for a REPORT to be sent (Valid values 0-60000). 
-            Range: 0~60000
-            Default: 25 (Previous State)
-        </Help>
-      </Value>
-      <Value type="number" byteSize="1" index="92" label="92 kWh Threshold" min="0" max="100" value="5" setting_type="zwave" fw="">
-        <Help>
-       		The value here represents minimum change in wattage percent (in terms of percentage %) for a REPORT to be sent. 
-            Range: 0~100
-            Default: 5 (Previous State)
-        </Help>
-      </Value>
-      <Value type="number" byteSize="4" index="101" label="101 (Group 1) Timed Automatic Reports" min="0" max="1776399" value="12" setting_type="zwave" fw="">
-        <Help>
-       		Sets the sensor report for kWh, Watt, Voltage, or Current.
-            Value Identifiers-
-                1 = Voltage
-                2 = Current
-                4 = Watt
-                8 = kWh
-                256 = Watt on OUT1
-                512 = Watt on OUT2
-                2048 = kWh on OUT1
-                4096 = kWh on OUT2
-                65536 = V on OUT1
-                131072 = V on OUT2
-                524288 = A on OUT1
-                1048576 = A on OUT2
-            Example: If you want only Watt and kWh to report, sum the value identifiers together for Watt and kWh. 8 + 4 = 12, therefore entering 12 into this setting will give you Watt + kWh reports if set.
-            Range: 0~1776399
-            Default: 12 (Previous State)
-        </Help>
-      </Value>
-      <Value type="number" byteSize="4" index="102" label="102 (Group 2) Timed Automatic Reports" min="0" max="1776399" value="0" setting_type="zwave" fw="">
-        <Help>
-       		Sets the sensor report for kWh, Watt, Voltage, or Current.
-            Value Identifiers-
-                1 = Voltage
-                2 = Current
-                4 = Watt
-                8 = kWh
-                256 = Watt on OUT1
-                512 = Watt on OUT2
-                2048 = kWh on OUT1
-                4096 = kWh on OUT2
-
-                65536 = V on OUT1
-                131072 = V on OUT2
-                524288 = A on OUT1
-                1048576 = A on OUT2
-            Example: If you want only Voltage and Current to report, sum the value identifiers together for Voltage + Current. 1 + 2 = 3, therefore entering 3 into this setting will give you Voltage + Current reports if set.
-            Range: 0~1776399
-            Default: 0 (Previous State)
-        </Help>
-      </Value>
-      <Value type="number" byteSize="4" index="103" label="103 (Group 3) Timed Automatic Reports" min="0" max="1776399" value="0" setting_type="zwave" fw="">
-        <Help>
-       		Sets the sensor report for kWh, Watt, Voltage, or Current.
-            Value Identifiers-
-                1 = Voltage
-                2 = Current
-                4 = Watt
-                8 = kWh
-                256 = Watt on OUT1
-                512 = Watt on OUT2
-                2048 = kWh on OUT1
-                4096 = kWh on OUT2
-                65536 = V on OUT1
-                131072 = V on OUT2
-                524288 = A on OUT1
-                1048576 = A on OUT2
-            Example: If you want all values to report, sum the value identifiers together for Voltage + Current + Watt + kWh (Total, OUT1, OUT2). 1 + 2 + 4 + 8 + 256 + 512 + 2048 + 4096 + 65536 + 131072 + 524288 + 1048576 = 1776399, therefore entering 15 into this setting will give you Voltage + Current + Watt + kWh (Total, OUT1, OUT2) reports if set.
-            Range: 0~1776399
-            Default: 0 (Previous State)
-        </Help>
-      </Value>
-      <Value type="number" byteSize="4" index="111" label="111 (Group 1) Set Report in Seconds" min="1" max="2147483647" value="240" setting_type="zwave" fw="">
-        <Help>
-       		Set the interval of automatic report for Report group 1 in (seconds). This controls (Group 1) Timed Automatic Reports.
-            Range: 0~2147483647
-            Default: 240 (Previous State)
-        </Help>
-      </Value>
-      <Value type="number" byteSize="4" index="112" label="112 (Group 2) Set Report in Seconds" min="1" max="2147483647" value="3600" setting_type="zwave" fw="">
-        <Help>
-       		Set the interval of automatic report for Report group 2 in (seconds). This controls (Group 2) Timed Automatic Reports.
-            Range: 0~2147483647
-            Default: 3600 (Previous State)
-        </Help>
-      </Value>
-      <Value type="number" byteSize="4" index="113" label="113 (Group 3) Set Report in Seconds" min="1" max="2147483647" value="3600" setting_type="zwave" fw="">
-        <Help>
-       		Set the interval of automatic report for Report group 3 in (seconds). This controls (Group 3) Timed Automatic Reports.
-            Range: 0~2147483647
-            Default: 3600 (Previous State)
-        </Help>
-      </Value>
-      <Value type="list" byteSize="1" index="120" label="120 External Switch S1 Setting" min="0" max="4" value="0" setting_type="zwave" fw="">
+      <Value type="list" byteSize="1" index="120" label="External Switch S1 Setting" min="0" max="4" value="0" setting_type="zwave" fw="">
         <Help>
         Configure the external switch mode for S1 via Configuration Set.
             0 = Unidentified mode.
@@ -792,7 +572,7 @@ def configuration_model() {
             <Item label="Momentary Push Button Mode" value="3" />
             <Item label="Automatic Identification" value="4" />
       </Value>
-      <Value type="list" byteSize="1" index="121" label="121 External Switch S2 Setting" min="0" max="4" value="0" setting_type="zwave" fw="">
+      <Value type="list" byteSize="1" index="121" label="External Switch S2 Setting" min="0" max="4" value="0" setting_type="zwave" fw="">
         <Help>
         Configure the external switch mode for S2 via Configuration Set.
             0 = Unidentified mode.
