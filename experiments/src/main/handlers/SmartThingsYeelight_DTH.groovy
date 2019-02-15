@@ -1,4 +1,3 @@
-package handlers
 
 metadata {
     definition(name: "Yeelight", namespace: "simontether", author: "Simon Tether", mnmn: "SmartThings", vid: "generic-rgbw-color-bulb") {

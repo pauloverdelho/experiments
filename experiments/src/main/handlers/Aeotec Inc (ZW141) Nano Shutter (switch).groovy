@@ -1,4 +1,3 @@
-package handlers
 /**
  *  Copyright 2015 SmartThings
  *
@@ -14,14 +13,13 @@ package handlers
  *  Notes - Edited and modifed from Z-Wave Secure Switch for a bare basic use of Aeotec Nano Shutter.
  */
 metadata {
-    definition(name: "Aeotec Inc (ZW141) Nano Shutter", namespace: "Aeotec", author: "Chris Cheng", runLocally: false) {
+    definition(name: "Aeotec Inc (ZW141) Nano Shutter (switch)", namespace: "Aeotec", author: "Chris Cheng", runLocally: false) {
         capability "Switch"
         capability "Refresh"
         capability "Polling"
         capability "Actuator"
         capability "Sensor"
         capability "Health Check"
-        capability "Switch Level"
         capability "Configuration"
 
         command "stop"
@@ -34,21 +32,11 @@ metadata {
         inClusters: "85,59,70,2C,2B,25,26,73,7A,86,72,5A"
     }
 
-    simulator {
-        status "Open": "command: 9881, payload: FF"
-        status "Close": "command: 9881, payload: 00"
-
-        reply "9881002001FF,delay 100,9881002502": "command: 9881, payload: FF"
-        reply "988100200100,delay 100,9881002502": "command: 9881, payload: 00"
-    }
-
     tiles {
         multiAttributeTile(name: "switch", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
             tileAttribute("device.switch", key: "PRIMARY_CONTROL") {
-                attributeState "closed", label: '${name}', action: "open", icon: "st.shades.shade-closed", backgroundColor: "#ffffff", nextState: "opening"
-                attributeState "open", label: '${name}', action: "close", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState: "closing"
-                attributeState "opening", label: '${name}', action: "stop", icon: "st.shades.shade-opening", backgroundColor: "#00a0dc", nextState: "partially open"
-                attributeState "closing", label: '${name}', action: "stop", icon: "st.shades.shade-closing", backgroundColor: "#00a0dc", nextState: "partially open"
+                attributeState "off", label: '${name}', action: "on", icon: "st.shades.shade-closed", backgroundColor: "#ffffff", nextState: "on"
+                attributeState "on", label: '${name}', action: "off", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState: "off"
             }
         }
         valueTile("open", "device.open", decoration: "flat", width: 2, height: 2) {
@@ -123,7 +111,7 @@ def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd) {
 }
 
 private handleStateChange(physicalgraph.zwave.Command cmd) {
-    createEvent(name: "switch", value: cmd.value ? "open" : "closed", type: "physical")
+    createEvent(name: "switch", value: cmd.value ? "on" : "off", type: "physical")
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) {

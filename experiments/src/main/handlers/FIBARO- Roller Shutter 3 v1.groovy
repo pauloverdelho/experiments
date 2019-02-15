@@ -1,4 +1,3 @@
-package handlers
 /**
  * 	Fibaro Roller Shutter 3
  */
