@@ -13,7 +13,7 @@
  *  Notes - Edited and modifed from Z-Wave Secure Switch for a bare basic use of Aeotec Nano Shutter.
  */
 metadata {
-    definition(name: "Aeotec Inc (ZW141) Nano Shutter", namespace: "Aeotec", author: "Chris Cheng", runLocally: false) {
+    definition(name: "Aeotec Inc (ZW141) Nano Shutter", namespace: "Aeotec", author: "Chris Cheng", ocfDeviceType: "oic.d.blind", mnmn: "SmartThings") {
         capability "Switch"
         capability "Refresh"
         capability "Polling"
@@ -31,14 +31,6 @@ metadata {
         fingerprint mfr: "0086", prod: "0103", model: "008D"
         inClusters: "5E,55,98,9F,6C"
         inClusters: "85,59,70,2C,2B,25,26,73,7A,86,72,5A"
-    }
-
-    simulator {
-        status "Open": "command: 9881, payload: FF"
-        status "Close": "command: 9881, payload: 00"
-
-        reply "9881002001FF,delay 100,9881002502": "command: 9881, payload: FF"
-        reply "988100200100,delay 100,9881002502": "command: 9881, payload: 00"
     }
 
     tiles {

@@ -13,7 +13,7 @@
  *  Notes - Edited and modifed from Z-Wave Secure Switch for a bare basic use of Aeotec Nano Shutter.
  */
 metadata {
-    definition(name: "Aeotec Inc (ZW141) Nano Shutter (switch)", namespace: "Aeotec", author: "Chris Cheng", runLocally: false) {
+    definition(name: "Aeotec Inc (ZW141) Nano Shutter (switch)", namespace: "Aeotec", author: "Chris Cheng", ocfDeviceType: "oic.d.blind", mnmn: "SmartThings") {
         capability "Switch"
         capability "Refresh"
         capability "Polling"
@@ -33,7 +33,7 @@ metadata {
     }
 
     tiles {
-        multiAttributeTile(name: "switch", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
+        multiAttributeTile(name: "switch", type: "lighting", width: 6, height: 4) {
             tileAttribute("device.switch", key: "PRIMARY_CONTROL") {
                 attributeState "off", label: '${name}', action: "on", icon: "st.shades.shade-closed", backgroundColor: "#ffffff", nextState: "on"
                 attributeState "on", label: '${name}', action: "off", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState: "off"

@@ -39,7 +39,7 @@
  *  1.10: Added Stop button to stop vertical axis motion
  */
 metadata {
-    definition (name: "Qubino Flush Shutter - Curtains", namespace: "inpier", author: "Kristjan Jam&scaron;ek") {
+    definition (name: "Qubino Flush Shutter - Shades", namespace: "inpier", author: "Kristjan Jam&scaron;ek", ocfDeviceType: "oic.d.blind", mnmn: "SmartThings") {
         capability "Actuator"
         capability "Window Shade"
         capability "Switch Level"
@@ -52,7 +52,6 @@ metadata {
         attribute "venetianLevel", "number" //attribute used to control and store venetian blinds level
         attribute "venetianState", "string" //attribute for the binary control element of the venetian blinds control
 
-
         command "setConfiguration" //command to issue Configuration Set commands to the module according to user preferences
         command "setAssociation" //command to issue Association Set commands to the modules according to user preferences
         command "refreshPowerConsumption" //command to issue Meter Get requests for KWH measurements from the device, W are already shown as part of Pwer Meter capability
@@ -62,95 +61,62 @@ metadata {
         command "setSlatLevel" //command to issue slat tilting controls
         command "openSlats" //command to set maximum level for slats
         command "closeSlats" //command to set minimum level for slats
+        command "closeNow"
+        command "openNow"
 
         fingerprint mfr:"0159", prod:"0003", model:"0052"  //Manufacturer Information value for Qubino Flush Shutter
     }
 
-
-    simulator {
-        // TESTED WITH PHYSICAL DEVICE - UNNEEDED
-    }
-
     tiles(scale: 2) {
-        multiAttributeTile(name:"shade", type: "generic", width: 6, height: 4, canChangeIcon: true){
-            tileAttribute ("device.windowShade", key: "PRIMARY_CONTROL") {
-                attributeState "open", label:'${name}', action:"close", icon:"st.Home.home9", backgroundColor:"#79b821", nextState:"closing"
-                attributeState "closed", label:'${name}', action:"open", icon:"st.Home.home9", backgroundColor:"#ffffff", nextState:"opening"
-                attributeState "opening", label:'${name}', action:"close", icon:"st.Home.home9", backgroundColor:"#79b821", nextState:"open"
-                attributeState "closing", label:'${name}', action:"open", icon:"st.Home.home9", backgroundColor:"#ffffff", nextState:"closed"
+        multiAttributeTile(name: "shade", type: "lighting", width: 6, height: 4) {
+            tileAttribute("device.windowShade", key: "PRIMARY_CONTROL") {
+                attributeState "unknown", label: '${name}', action: "calibrate", icon: "st.shades.shade-closed", backgroundColor: "#ffffff"
+                attributeState "closed", label: '${name}', action: "open", icon: "st.shades.shade-closed", backgroundColor: "#ffffff", nextState: "opening"
+                attributeState "open", label: '${name}', action: "close", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState: "closing"
+                attributeState "opening", label: '${name}', action: "stop", icon: "st.shades.shade-opening", backgroundColor: "#00a0dc", nextState: "partially open"
+                attributeState "closing", label: '${name}', action: "stop", icon: "st.shades.shade-closing", backgroundColor: "#00a0dc", nextState: "partially open"
+                attributeState "partially open", label: '${name}', action: "close", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState: "closing"
             }
-            tileAttribute ("device.level", key: "SLIDER_CONTROL") {
-                attributeState "level", action:"switch level.setLevel"
-            }
-            tileAttribute ("device.power", key: "SECONDARY_CONTROL") {
+            tileAttribute("device.power", key: "SECONDARY_CONTROL") {
                 attributeState "power", label:'Power level: ${currentValue} W', icon: "st.Appliances.appliances17"
             }
-        }
-        standardTile("stop", "device.stop", decoration: "flat", width: 6, height: 2) {
-            state("stop", label:'', action:'stop', icon: "st.sonos.stop-btn")
-        }
-        standardTile("venetianLabel", "device.venetianLabel", decoration: "flat", width: 6, height: 2) {
-            state("venetianLabel", label:'SLAT TILT CONTROLS:')
-        }
-
-        multiAttributeTile(name:"venetianTile", type: "generic", width: 6, height: 4){
-            tileAttribute ("venetianState", key: "PRIMARY_CONTROL") {
-                attributeState "Slats open", label:'${name}', action:"closeSlats", backgroundColor:"#79b821", nextState:"Slats closing"
-                attributeState "Slats closed", label:'${name}', action:"openSlats", backgroundColor:"#ffffff", nextState:"Slats opening"
-                attributeState "Slats opening", label:'${name}', action:"closeSlats", backgroundColor:"#79b821", nextState:"Slats open"
-                attributeState "Slats closing", label:'${name}', action:"openSlats", backgroundColor:"#ffffff", nextState:"Slats closed"
-            }
-            tileAttribute ("venetianLevel", key: "SLIDER_CONTROL") {
-                attributeState "venetianLevel", action:"setSlatLevel"
+            tileAttribute("device.level", key: "SLIDER_CONTROL") {
+                attributeState "level", action: "setLevel"
             }
         }
-
-        standardTile("power", "device.power", decoration: "flat", width: 3, height: 3) {
+        valueTile("open", "device.open", decoration: "flat", width: 2, height: 2) {
+            state "open", label: 'Open', action: "openNow", icon: "st.shades.shade-opening"
+        }
+        valueTile("close", "device.close", decoration: "flat", width: 2, height: 2) {
+            state "close", label: 'Close', action: "closeNow", icon: "st.shades.shade-closing"
+        }
+        valueTile("stop", "device.stop", decoration: "flat", width: 2, height: 2) {
+            state "stop", label: 'Stop', action: "stop", icon: "st.Home.home30"
+        }
+        valueTile("power", "device.power", decoration: "flat", width: 2, height: 1) {
             state("power", label:'${currentValue} W', icon: 'st.Appliances.appliances17')
         }
-        standardTile("kwhConsumption", "device.kwhConsumption", decoration: "flat", width: 3, height: 3) {
-            state("kwhConsumption", label:'${currentValue} kWh', icon: 'st.Appliances.appliances17')
-        }
-        standardTile("resetPower", "device.resetPower", decoration: "flat", width: 3, height: 3) {
+        standardTile("resetPower", "device.resetPower", decoration: "flat", width: 1, height: 1) {
             state("resetPower", label:'Reset Power', action:'resetPower')
         }
-        standardTile("refreshPowerConsumption", "device.refreshPowerConsumption", decoration: "flat", width: 3, height: 3) {
+        standardTile("kwhConsumption", "device.kwhConsumption", decoration: "flat", width: 2, height: 1) {
+            state("kwhConsumption", label:'${currentValue} kWh', icon: 'st.Appliances.appliances17')
+        }
+        standardTile("refreshPowerConsumption", "device.refreshPowerConsumption", decoration: "flat", width: 1, height: 1) {
             state("refreshPowerConsumption", label:'Refresh power', action:'refreshPowerConsumption')
         }
-        /* //THIS VERSION DOESN?T SUPPORT TEMPERATURE SENSORS YET
-        standardTile("temperature", "device.temperature", width: 6, height: 3) {
-            state("temperature", label:'${currentValue} ${unit}', unit:'°', icon: 'st.Weather.weather2', backgroundColors: [
-                // Celsius Color Range
-                [value: 0, color: "#153591"],
-                [value: 7, color: "#1e9cbb"],
-                [value: 15, color: "#90d2a7"],
-                [value: 23, color: "#44b621"],
-                [value: 29, color: "#f1d801"],
-                [value: 33, color: "#d04e00"],
-                [value: 36, color: "#bc2323"],
-                // Fahrenheit Color Range
-                [value: 40, color: "#153591"],
-                [value: 44, color: "#1e9cbb"],
-                [value: 59, color: "#90d2a7"],
-                [value: 74, color: "#44b621"],
-                [value: 84, color: "#f1d801"],
-                [value: 92, color: "#d04e00"],
-                [value: 96, color: "#bc2323"]
-            ])
+        valueTile("calibrate", "device.calibrate", decoration: "flat", width: 2, height: 1) {
+            state "calibrate", label: 'Calibrate', action: "calibrate", icon: "st.contact.contact.closed"
         }
-        */
-        standardTile("setConfiguration", "device.setConfiguration", decoration: "flat", width: 3, height: 3) {
+        standardTile("setConfiguration", "device.setConfiguration", decoration: "flat", width: 2, height: 1) {
             state("setConfiguration", label:'Set Configuration', action:'setConfiguration')
         }
-        standardTile("setAssociation", "device.setAssociation", decoration: "flat", width: 3, height: 3) {
+        standardTile("setAssociation", "device.setAssociation", decoration: "flat", width: 2, height: 1) {
             state("setAssociation", label:'Set Associations', action:'setAssociation')
         }
-        standardTile("calibrate", "device.calibrate", decoration: "flat", width: 6, height: 2) {
-            state("calibrate", label:'Calibrate', action:'calibrate')
-        }
 
-        main("shade")
-        details(["shade", "stop", /*"venetianLabel", "venetianTile",*/ "power", "kwhConsumption", "resetPower", "refreshPowerConsumption", "setConfiguration", "setAssociation", "calibrate"])
+        main "shade"
+        details(["shade", "open", "close", "stop", "power", "kwhConsumption", "resetPower", "refreshPowerConsumption", "calibrate", "setConfiguration", "setAssociation"])
     }
     preferences {
 /**
@@ -556,11 +522,32 @@ def calibrate() {
  * @param level The desired value of the dimmer we are trying to set.
  * @return void.
  */
-def setLevel(level) {
-    //log.info "Alexa Set Curtains to $level"
-    log.debug "Qubino Flush Shutter: setLevel()"
-    if(level > 99) level = 99
+//def setLevel(level) {
+//    //log.info "Alexa Set Curtains to $level"
+//    log.debug "Qubino Flush Shutter: setLevel()"
+//    if(level > 99) level = 99
+//    zwave.switchMultilevelV3.switchMultilevelSet(value: level, dimmingDuration: 0x00).format()
+//}
+
+def setLevel(value) {
+    log.debug "Qubino Flush Shutter: setLevel(${value})"
+    Integer level = value as Integer
+    if (level < 0) level = 0
+    if (level > 99) level = 99
+
+    Integer currentLevel = device.currentValue("level")
+    if (currentLevel < level) sendEvent(name: "windowShade", value: "opening")
+    if (currentLevel > level) sendEvent(name: "windowShade", value: "closing")
+
     zwave.switchMultilevelV3.switchMultilevelSet(value: level, dimmingDuration: 0x00).format()
+}
+
+def openNow() {
+    setLevel(99)
+}
+
+def closeNow() {
+    setLevel(0)
 }
 
 /**
@@ -793,14 +780,7 @@ def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv5.SensorMultilevelR
  */
 def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv3.SwitchMultilevelReport cmd){
     log.debug "Qubino Flush Shutter: firing switch multilevel event"
-    def result = []
-    result << createEvent(name:"windowShade", value: cmd.value ? "open" : "closed", isStateChange: true)
-    if(cmd.value > 99){
-        result << createEvent(name:"level", value: cmd.value, unit:"%", descriptionText:"${device.displayName} is uncalibrated! Please press calibrate!", isStateChange: true)
-    }else{
-        result << createEvent(name:"level", value: cmd.value, unit:"%", descriptionText:"${device.displayName} moved to ${cmd.value==99 ? 100 : cmd.value}%", isStateChange: true)
-    }
-    return result
+    return handleLevelReport(cmd)
 }
 /**
  * Event handler for received MC Encapsulated Switch Multilevel Report frames.
@@ -813,12 +793,7 @@ def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv3.SwitchMultilevelR
     def result = []
     switch(command.sourceEndPoint){
         case 1:
-            result << createEvent(name:"windowShade", value: cmd.value ? "open" : "closed", isStateChange: true)
-            if(cmd.value > 99){
-                result << createEvent(name:"level", value: cmd.value, unit:"%", descriptionText:"${device.displayName} is uncalibrated! Please press calibrate!")
-            }else{
-                result << createEvent(name:"level", value: cmd.value, unit:"%", descriptionText:"${device.displayName} moved to ${cmd.value==99 ? 100 : cmd.value}%", isStateChange: true)
-            }
+            result = handleLevelReport(cmd)
             break;
         case 2:
             log.debug "Received command from EP2"
@@ -890,12 +865,29 @@ def zwaveEvent(physicalgraph.zwave.commands.configurationv2.ConfigurationReport 
  */
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd){
     log.debug "Qubino Flush Shutter: firing basic report event"
+    return handleLevelReport(cmd)
+}
+
+private List handleLevelReport(physicalgraph.zwave.Command cmd) {
     def result = []
-    result << createEvent(name:"windowShade", value: cmd.value ? "open" : "closed", isStateChange: true)
-    if(cmd.value > 99){
-        result << createEvent(name:"level", value: cmd.value, unit:"%", descriptionText:"${device.displayName} is uncalibrated! Please press calibrate!", isStateChange: true)
-    }else{
-        result << createEvent(name:"level", value: cmd.value, unit:"%", descriptionText:"${device.displayName} moved to ${cmd.value==99 ? 100 : cmd.value}%", isStateChange: true)
+    def descriptionText = null
+    def shadeValue
+    def level = cmd.value as Integer
+    if (level == 99) {
+        level = 100
+        shadeValue = "open"
+    } else if (level == 0) {
+        level = 0  // unlike dimmer switches, the level isn't saved when closed
+        shadeValue = "closed"
+    } else {
+        shadeValue = "partially open"
+        descriptionText = "${device.displayName} shade is ${level}% open"
+    }
+    result << createEvent(name: "windowShade", value: shadeValue, isStateChange: true)
+    if (cmd.value > 99) {
+        result << createEvent(name: "level", value: cmd.value, unit: "%", descriptionText: "${device.displayName} is uncalibrated! Please press calibrate!", isStateChange: true)
+    } else {
+        result << createEvent(name: "level", value: level, unit: "%", descriptionText: descriptionText, isStateChange: true)
     }
     return result
 }
