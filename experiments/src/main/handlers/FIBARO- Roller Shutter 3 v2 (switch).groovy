@@ -479,7 +479,7 @@ private parameterMap() {
                     4: "4 - Gate Mode, with positioning"
             ], def: "1", title: "Roller Shutter operating modes",
              descr: ""],
-            [key  : "motorOperationDetection", num: 155, size: 2, type: "number", def: 10, min: 0, max: 255, title: "Motor operation detection",
+            [key  : "motorTreshold", num: 155, size: 2, type: "number", def: 10, min: 0, max: 255, title: "Motor operation detection",
              descr: "Power threshold to be interpreted as reaching a limit switch. (1-255 W)"],
     ]
 }
