@@ -330,15 +330,20 @@ def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv5.SensorMultilevelR
 
 def zwaveEvent(physicalgraph.zwave.commands.meterv3.MeterReport cmd) {
     logging("${device.displayName} - MeterReport received, value: ${cmd.scaledMeterValue} scale: ${cmd.scale}", "info")
+    def result = []
     switch (cmd.scale) {
         case 0:
             sendEvent([name: "energy", value: cmd.scaledMeterValue, unit: "kWh"])
             break
         case 2:
             sendEvent([name: "power", value: cmd.scaledMeterValue, unit: "W"])
+            if (cmd.scaledMeterValue == 0.0) {
+                result << response(["delay 500", encap(zwave.switchMultilevelV3.switchMultilevelGet())])
+            }
             break
     }
     multiStatusEvent("${(device.currentValue("power") ?: "0.0")} W | ${(device.currentValue("energy") ?: "0.00")} kWh")
+    return result
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv3.SwitchMultilevelStopLevelChange cmd) {
