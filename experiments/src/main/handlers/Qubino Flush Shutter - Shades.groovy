@@ -40,12 +40,16 @@
  */
 metadata {
     definition (name: "Qubino Flush Shutter - Shades", namespace: "inpier", author: "Kristjan Jam&scaron;ek", ocfDeviceType: "oic.d.blind", mnmn: "SmartThings") {
-        capability "Actuator"
         capability "Window Shade"
+        capability "Window Shade Preset"
         capability "Switch Level"
-        capability "Power Meter"
         capability "Switch" //added by inpier
+
+        capability "Power Meter"
         capability "Configuration" //Needed for configure() function to set any specific configurations
+        capability "Health Check"
+        capability "Refresh"
+
         //capability "Temperature Measurement" //This capability is valid for devices with temperature sensors connected
 
         attribute "kwhConsumption", "number" //attribute used to store and display power consumption in KWH
@@ -105,8 +109,11 @@ metadata {
         standardTile("refreshPowerConsumption", "device.refreshPowerConsumption", decoration: "flat", width: 1, height: 1) {
             state("refreshPowerConsumption", label:'Refresh power', action:'refreshPowerConsumption')
         }
-        valueTile("calibrate", "device.calibrate", decoration: "flat", width: 2, height: 1) {
+        valueTile("calibrate", "device.calibrate", decoration: "flat", width: 1, height: 1) {
             state "calibrate", label: 'Calibrate', action: "calibrate", icon: "st.contact.contact.closed"
+        }
+        standardTile("refresh", "device.refresh", decoration: "flat", width: 1, height: 1) {
+            state "refresh", label: 'Refresh', action: "refresh", icon: "st.secondary.refresh-icon"
         }
         standardTile("setConfiguration", "device.setConfiguration", decoration: "flat", width: 2, height: 1) {
             state("setConfiguration", label:'Set Configuration', action:'setConfiguration')
@@ -116,7 +123,7 @@ metadata {
         }
 
         main "shade"
-        details(["shade", "open", "close", "stop", "power", "kwhConsumption", "resetPower", "refreshPowerConsumption", "calibrate", "setConfiguration", "setAssociation"])
+        details(["shade", "open", "close", "stop", "power", "kwhConsumption", "resetPower", "refreshPowerConsumption", "calibrate", "refresh", "setConfiguration", "setAssociation"])
     }
     preferences {
 /**
@@ -542,6 +549,10 @@ def setLevel(value) {
     zwave.switchMultilevelV3.switchMultilevelSet(value: level, dimmingDuration: 0x00).format()
 }
 
+def presetPosition() {
+    setLevel(preset ?: state.preset ?: 99)
+}
+
 def openNow() {
     setLevel(99)
 }
@@ -563,6 +574,15 @@ def refreshPowerConsumption() {
             zwave.meterV2.meterGet(scale: 2).format()
     ], 1000)
 }
+
+def refresh() {
+    logging("${device.displayName} - Executing refresh()", "info")
+    delayBetween([
+            zwave.basicV1.basicGet().format(),
+            zwave.switchMultilevelV1.switchMultilevelGet().format()
+    ], 1000)
+}
+
 /**
  * Reset Power Consumption command handler for resetting the cumulative consumption fields in kWh. It will issue a Meter Reset command followed by Meter Get commands for active and accumulated power.
  *
