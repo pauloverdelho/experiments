@@ -1,10 +1,9 @@
-/**
- * 	Fibaro Roller Shutter 3
- */
 metadata {
-    definition(name: "Fibaro Roller Shutter 3", namespace: "FibarGroup", author: "Paulo Verdelho", ocfDeviceType: "oic.d.blind", mnmn: "SmartThings") {
+    definition(name: "Fibaro Roller Shutter 3 (Switch)", namespace: "FibarGroup", author: "Paulo Verdelho", ocfDeviceType: "oic.d.blind", mnmn: "SmartThings", vid: "generic-shade") {
         capability "Window Shade"
         capability "Window Shade Preset"
+        capability "Switch Level"   // until we get a Window Shade Level capability
+        capability "Switch"         // so it can be shared with google assistant
         capability "Energy Meter"
         capability "Power Meter"
         capability "Configuration"
@@ -16,9 +15,6 @@ metadata {
         command "stop"
         command "closeNow"
         command "openNow"
-
-        capability "Switch Level"   // until we get a Window Shade Level capability
-        capability "Switch"         // so it can be shared with google assistant
 
         // RAW information on device
         //zw:Ls type:1106 mfr:010F prod:0303 model:1000 ver:5.00 zwv:6.02 lib:03 cc:5E,55,98,9F,56,6C,22 sec:26,85,8E,59,86,72,5A,73,32,70,71,75,60,5B,7A role:05 ff:9900 ui:9900 ep:['1106 5E,98,9F,6C,22', '1106 5E,98,9F,6C,22']

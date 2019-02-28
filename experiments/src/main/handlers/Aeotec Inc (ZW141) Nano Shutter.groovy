@@ -13,24 +13,20 @@
  *  Notes - Edited and modifed from Z-Wave Secure Switch for a bare basic use of Aeotec Nano Shutter.
  */
 metadata {
-    definition(name: "Aeotec Inc (ZW141) Nano Shutter", namespace: "Aeotec", author: "Chris Cheng", ocfDeviceType: "oic.d.blind", mnmn: "SmartThings") {
+    definition(name: "Aeotec Inc (ZW141) Nano Shutter", namespace: "Aeotec", author: "Chris Cheng", ocfDeviceType: "oic.d.blind", mnmn: "SmartThings", vid: "generic-shade") {
         capability "Switch"
-        capability "Refresh"
-        capability "Polling"
-        capability "Actuator"
-        capability "Sensor"
+        capability "Configuration"
         capability "Health Check"
         capability "Switch Level"
-        capability "Configuration"
+        capability "Refresh"
 
         command "stop"
         command "open"
         command "close"
-        command "setLevel"
 
         fingerprint mfr: "0086", prod: "0103", model: "008D"
-        inClusters: "5E,55,98,9F,6C"
-        inClusters: "85,59,70,2C,2B,25,26,73,7A,86,72,5A"
+//        inClusters: "5E,55,98,9F,6C"
+//        inClusters: "85,59,70,2C,2B,25,26,73,7A,86,72,5A"
     }
 
     tiles {
@@ -70,11 +66,13 @@ metadata {
 }
 
 def installed() {
+    log.debug("installed()")
     // Device-Watch simply pings if no device events received for checkInterval duration of 32min = 2 * 15min + 2min lag time
     sendEvent(name: "checkInterval", value: 2 * 15 * 60 + 2 * 60, displayed: false, data: [protocol: "zwave", hubHardwareId: device.hub.hardwareID, offlinePingable: "1"])
 }
 
 def updated() {
+    log.debug("updated()")
     def cmds = []
     cmds = update_needed_settings()
     sendEvent(name: "checkInterval", value: 2 * 15 * 60 + 2 * 60, displayed: false, data: [protocol: "zwave", hubHardwareId: device.hub.hardwareID])
@@ -183,11 +181,7 @@ def stop() {
     ])
 }
 
-def ping() {
-    refresh()
-}
-
-def poll() {
+def ping(){
     refresh()
 }
 

@@ -2,8 +2,10 @@
  * 	Fibaro Roller Shutter 3
  */
 metadata {
-    definition(name: "Fibaro Roller Shutter 3", namespace: "FibarGroup", author: "Paulo Verdelho", ocfDeviceType: "oic.d.blind") {
+    definition(name: "Fibaro Roller Shutter 3", namespace: "FibarGroup", author: "Paulo Verdelho", ocfDeviceType: "oic.d.blind", mnmn: "SmartThings", vid: "generic-shade") {
         capability "Window Shade"
+        capability "Window Shade Preset"
+        capability "Switch Level"   // until we get a Window Shade Level capability
         capability "Energy Meter"
         capability "Power Meter"
         capability "Configuration"
@@ -15,8 +17,6 @@ metadata {
         command "stop"
         command "closeNow"
         command "openNow"
-
-        capability "Switch Level"   // until we get a Window Shade Level capability
 
         // RAW information on device
         //zw:Ls type:1106 mfr:010F prod:0303 model:1000 ver:5.00 zwv:6.02 lib:03 cc:5E,55,98,9F,56,6C,22 sec:26,85,8E,59,86,72,5A,73,32,70,71,75,60,5B,7A role:05 ff:9900 ui:9900 ep:['1106 5E,98,9F,6C,22', '1106 5E,98,9F,6C,22']
@@ -320,15 +320,20 @@ def zwaveEvent(physicalgraph.zwave.commands.sensormultilevelv5.SensorMultilevelR
 
 def zwaveEvent(physicalgraph.zwave.commands.meterv3.MeterReport cmd) {
     logging("${device.displayName} - MeterReport received, value: ${cmd.scaledMeterValue} scale: ${cmd.scale}", "info")
+    def result = []
     switch (cmd.scale) {
         case 0:
             sendEvent([name: "energy", value: cmd.scaledMeterValue, unit: "kWh"])
             break
         case 2:
             sendEvent([name: "power", value: cmd.scaledMeterValue, unit: "W"])
+            if (cmd.scaledMeterValue == 0.0) {
+                result << response(["delay 500", encap(zwave.switchMultilevelV3.switchMultilevelGet())])
+            }
             break
     }
     multiStatusEvent("${(device.currentValue("power") ?: "0.0")} W | ${(device.currentValue("energy") ?: "0.00")} kWh")
+    return result
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv3.SwitchMultilevelStopLevelChange cmd) {
@@ -342,7 +347,7 @@ def zwaveEvent(physicalgraph.zwave.Command cmd) {
 }
 
 def parse(String description) {
-    def result = []
+    def result = null
     logging("${device.displayName} - Parsing: ${description}")
     if (description.startsWith("Err 106")) {
         result = createEvent(
@@ -352,15 +357,14 @@ def parse(String description) {
                 value: "failed",
                 displayed: true,
         )
-    } else if (description == "updated") {
-        return null
-    } else {
+    } else if (description != "updated") {
         def cmd = zwave.parse(description, cmdVersions())
         if (cmd) {
             logging("${device.displayName} - Parsed: ${cmd}")
-            zwaveEvent(cmd)
+            result = zwaveEvent(cmd)
         }
     }
+    return result
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.securityv1.SecurityMessageEncapsulation cmd) {

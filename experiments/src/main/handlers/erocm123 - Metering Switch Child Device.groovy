@@ -14,7 +14,7 @@
  *
  */
 metadata {
-    definition (name: "Metering Switch Child Device", namespace: "erocm123", author: "Eric Maycock") {
+    definition(name: "Metering Switch Child Device", namespace: "erocm123", author: "Eric Maycock", vid: "generic-switch-power-energy") {
         capability "Switch"
         capability "Actuator"
         capability "Sensor"
@@ -26,25 +26,25 @@ metadata {
     }
 
     tiles {
-        multiAttributeTile(name:"switch", type: "lighting", width: 3, height: 4, canChangeIcon: true){
-            tileAttribute ("device.switch", key: "PRIMARY_CONTROL") {
-                attributeState "off", label: '${name}', action: "switch.on", icon: "st.switches.switch.off", backgroundColor: "#ffffff", nextState:"turningOn"
-                attributeState "on", label: '${name}', action: "switch.off", icon: "st.switches.switch.on", backgroundColor: "#00A0DC", nextState:"turningOff"
-                attributeState "turningOn", label:'${name}', action:"switch.off", icon:"st.switches.switch.on", backgroundColor:"#00A0DC", nextState:"turningOff"
-                attributeState "turningOff", label:'${name}', action:"switch.on", icon:"st.switches.switch.off", backgroundColor:"#ffffff", nextState:"turningOn"
+        multiAttributeTile(name: "switch", type: "lighting", width: 3, height: 4, canChangeIcon: true) {
+            tileAttribute("device.switch", key: "PRIMARY_CONTROL") {
+                attributeState "off", label: '${name}', action: "switch.on", icon: "st.switches.switch.off", backgroundColor: "#ffffff", nextState: "turningOn"
+                attributeState "on", label: '${name}', action: "switch.off", icon: "st.switches.switch.on", backgroundColor: "#00A0DC", nextState: "turningOff"
+                attributeState "turningOn", label: '${name}', action: "switch.off", icon: "st.switches.switch.on", backgroundColor: "#00A0DC", nextState: "turningOff"
+                attributeState "turningOff", label: '${name}', action: "switch.on", icon: "st.switches.switch.off", backgroundColor: "#ffffff", nextState: "turningOn"
             }
         }
         valueTile("power", "device.power", decoration: "flat", width: 2, height: 2) {
-            state "default", label:'${currentValue} W'
+            state "default", label: '${currentValue} W'
         }
         valueTile("energy", "device.energy", decoration: "flat", width: 2, height: 2) {
-            state "default", label:'${currentValue} kWh'
+            state "default", label: '${currentValue} kWh'
         }
         standardTile("refresh", "device.switch", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", label:"", action:"refresh.refresh", icon:"st.secondary.refresh"
+            state "default", label: "", action: "refresh.refresh", icon: "st.secondary.refresh"
         }
         standardTile("reset", "device.energy", inactiveLabel: false, decoration: "flat", width: 2, height: 2) {
-            state "default", label:'reset kWh', action:"reset"
+            state "default", label: 'reset kWh', action: "reset"
         }
     }
 }

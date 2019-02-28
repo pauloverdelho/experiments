@@ -39,7 +39,7 @@
  *  1.10: Added Stop button to stop vertical axis motion
  */
 metadata {
-    definition (name: "Qubino Flush Shutter - Shades", namespace: "inpier", author: "Kristjan Jam&scaron;ek", ocfDeviceType: "oic.d.blind", mnmn: "SmartThings") {
+    definition (name: "Qubino Flush Shutter - Shades", namespace: "inpier", author: "Kristjan Jam&scaron;ek", ocfDeviceType: "oic.d.blind", mnmn: "SmartThings", vid: "generic-shade") {
         capability "Window Shade"
         capability "Window Shade Preset"
         capability "Switch Level"
@@ -72,7 +72,7 @@ metadata {
     }
 
     tiles(scale: 2) {
-        multiAttributeTile(name: "shade", type: "lighting", width: 6, height: 4) {
+        multiAttributeTile(name: "windowShade", type: "lighting", width: 6, height: 4) {
             tileAttribute("device.windowShade", key: "PRIMARY_CONTROL") {
                 attributeState "unknown", label: '${name}', action: "calibrate", icon: "st.shades.shade-closed", backgroundColor: "#ffffff"
                 attributeState "closed", label: '${name}', action: "open", icon: "st.shades.shade-closed", backgroundColor: "#ffffff", nextState: "opening"
@@ -122,8 +122,8 @@ metadata {
             state("setAssociation", label:'Set Associations', action:'setAssociation')
         }
 
-        main "shade"
-        details(["shade", "open", "close", "stop", "power", "kwhConsumption", "resetPower", "refreshPowerConsumption", "calibrate", "refresh", "setConfiguration", "setAssociation"])
+        main "windowShade"
+        details(["windowShade", "open", "close", "stop", "power", "kwhConsumption", "resetPower", "refreshPowerConsumption", "calibrate", "refresh", "setConfiguration", "setAssociation"])
     }
     preferences {
 /**
