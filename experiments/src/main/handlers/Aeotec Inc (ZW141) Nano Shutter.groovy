@@ -19,10 +19,10 @@ metadata {
         capability "Health Check"
         capability "Switch Level"
         capability "Refresh"
+        capability "Window Shade"
+        capability "Window Shade Preset"
 
         command "stop"
-        command "open"
-        command "close"
 
         fingerprint mfr: "0086", prod: "0103", model: "008D"
 //        inClusters: "5E,55,98,9F,6C"
@@ -30,12 +30,16 @@ metadata {
     }
 
     tiles {
-        multiAttributeTile(name: "switch", type: "lighting", width: 6, height: 4, canChangeIcon: true) {
-            tileAttribute("device.switch", key: "PRIMARY_CONTROL") {
+        multiAttributeTile(name: "windowShade", type: "lighting", width: 6, height: 4) {
+            tileAttribute("device.windowShade", key: "PRIMARY_CONTROL") {
+                attributeState "unknown", label: '${name}', action: "calibrate", icon: "st.shades.shade-closed", backgroundColor: "#ffffff"
                 attributeState "closed", label: '${name}', action: "open", icon: "st.shades.shade-closed", backgroundColor: "#ffffff", nextState: "opening"
                 attributeState "open", label: '${name}', action: "close", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState: "closing"
                 attributeState "opening", label: '${name}', action: "stop", icon: "st.shades.shade-opening", backgroundColor: "#00a0dc", nextState: "partially open"
                 attributeState "closing", label: '${name}', action: "stop", icon: "st.shades.shade-closing", backgroundColor: "#00a0dc", nextState: "partially open"
+                attributeState "partially open", label: '${name}', action: "close", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState: "closing"
+//                attributeState "off", label: '${name}', action: "on", icon: "st.shades.shade-closed", backgroundColor: "#ffffff", nextState: "on"
+//                attributeState "on", label: '${name}', action: "off", icon: "st.shades.shade-open", backgroundColor: "#00a0dc", nextState: "off"
             }
         }
         valueTile("open", "device.open", decoration: "flat", width: 2, height: 2) {
@@ -55,8 +59,8 @@ metadata {
             state "YES", label: '', action: "configuration.configure", icon: "https://github.com/erocm123/SmartThingsPublic/raw/master/devicetypes/erocm123/qubino-flush-1d-relay.src/configure@2x.png"
         }
 
-        main "switch"
-        details(["switch", "open", "close", "stop", "configure", "refresh"])
+        main "windowShade"
+        details(["windowShade", "open", "close", "stop", "configure", "refresh"])
     }
 
     preferences {
@@ -68,13 +72,12 @@ metadata {
 def installed() {
     log.debug("installed()")
     // Device-Watch simply pings if no device events received for checkInterval duration of 32min = 2 * 15min + 2min lag time
-    sendEvent(name: "checkInterval", value: 2 * 15 * 60 + 2 * 60, displayed: false, data: [protocol: "zwave", hubHardwareId: device.hub.hardwareID, offlinePingable: "1"])
+    sendEvent(name: "checkInterval", value: 1920, displayed: false, data: [protocol: "zwave", hubHardwareId: device.hub.hardwareID, offlinePingable: "1"])
 }
 
 def updated() {
     log.debug("updated()")
-    def cmds = []
-    cmds = update_needed_settings()
+    def cmds = update_needed_settings()
     sendEvent(name: "checkInterval", value: 2 * 15 * 60 + 2 * 60, displayed: false, data: [protocol: "zwave", hubHardwareId: device.hub.hardwareID])
     sendEvent(name: "needUpdate", value: device.currentValue("needUpdate"), displayed: false, isStateChange: true)
     if (cmds != []) response(commands(cmds))
@@ -97,36 +100,27 @@ def parse(description) {
     result
 }
 
-/**
- *  COMMAND_CLASS_BASIC (0x20)
- *  This command is being ignored in secure inclusion mode.
- *
- *  Short	value	0xFF for on, 0x00 for off
- */
+private handleStateChange(physicalgraph.zwave.Command cmd) {
+    createEvent(name: "windowShade", value: cmd.value ? "open" : "closed", type: "physical")
+}
 
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicReport cmd) {
-    //createEvent(name: "on", value: cmd.value ? "up" : "down")
-    //name: "switch", value: cmd.value ? "on" : "off", type: "physical"
     log.debug "BasicReport(value:${cmd.value})"
     handleStateChange(cmd)
 }
 
-private handleStateChange(physicalgraph.zwave.Command cmd) {
-    createEvent(name: "switch", value: cmd.value ? "open" : "closed", type: "physical")
-}
-
 def zwaveEvent(physicalgraph.zwave.commands.basicv1.BasicSet cmd) {
-    //createEvent(name: "off", value: cmd.value ? "up" : "down")
+    log.debug "BasicSet(value:${cmd.value})"
+    handleStateChange(cmd)
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.switchbinaryv1.SwitchBinaryReport cmd) {
-    //createEvent(name: "on", value: cmd.value ? "up" : "down")
-    //name: "switch", value: cmd.value ? "on" : "off", type: "digital"
     log.debug "BinaryReport(value:${cmd.value})"
     handleStateChange(cmd)
 }
 
 def zwaveEvent(physicalgraph.zwave.commands.switchmultilevelv3.SwitchMultilevelReport cmd) {
+    log.debug "SwitchMultilevelReport(value:${cmd.value})"
     handleStateChange(cmd)
 }
 
@@ -150,14 +144,18 @@ def close() {
     setLevel(0x00)
 }
 
+def presetPosition() {
+    setLevel(preset ?: state.preset ?: 99)
+}
+
 def setLevel(value, duration = null) {
     log.debug "${device.displayName} - Executing setLevel(${value.inspect()})"
     Integer level = value as Integer
     if (level == 0) {
-        sendEvent(name: "switch", value: "closing")
+        sendEvent(name: "windowShade", value: "closing")
     }
     if (level > 0) {
-        sendEvent(name: "switch", value: "opening")
+        sendEvent(name: "windowShade", value: "opening")
     }
 
     commands([
