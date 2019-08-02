@@ -576,7 +576,7 @@ def refreshPowerConsumption() {
 }
 
 def refresh() {
-    logging("${device.displayName} - Executing refresh()", "info")
+    log.info "${device.displayName} - Executing refresh()"
     delayBetween([
             zwave.basicV1.basicGet().format(),
             zwave.switchMultilevelV1.switchMultilevelGet().format()
