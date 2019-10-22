@@ -7,7 +7,7 @@ public enum IntervalType {
 
     private String[] numbers;
 
-    IntervalType(String... numbers) {
+    private IntervalType(String... numbers) {
         this.numbers = numbers;
     }
 

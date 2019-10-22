@@ -1,20 +1,20 @@
-
 package com.ana.documents.service;
 
 import java.io.BufferedReader;
 import java.io.Serializable;
 import java.io.StringReader;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class IntervalService implements Serializable {
 
     public Map<IntervalType, String> getIntervals(String text) {
-        Map<IntervalType, String> intervals = new HashMap<>();
+        EnumMap<IntervalType, String> intervals = new EnumMap<>(IntervalType.class);
         List<String> numbers = readNumbers(text);
         String facturas = getIntervals(getNumbersByType(IntervalType.FACTURA, numbers));
         if (facturas.length() > 0) {
@@ -39,8 +39,8 @@ public class IntervalService implements Serializable {
         boolean interval = false;
 
         Integer number;
-        for (Iterator var4 = numbers.iterator(); var4.hasNext(); previous = number) {
-            number = (Integer) var4.next();
+        for (Iterator iterator = numbers.iterator(); iterator.hasNext(); previous = number) {
+            number = (Integer) iterator.next();
             if (previous != null) {
                 if (number - previous == 1) {
                     if (!interval) {
@@ -68,21 +68,25 @@ public class IntervalService implements Serializable {
     }
 
     private static List<Integer> getNumbersByType(IntervalType type, List<String> numberList) {
-        return numberList.stream().filter(s -> startsWithAny(s, type)).map(Integer::valueOf).distinct().sorted().collect(Collectors.toList());
+        return numberList.stream()
+                .filter(s -> startsWithAny(s, type))
+                .map(IntervalService::mapInteger)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .distinct()
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    private static Optional<Integer> mapInteger(String number) {
+        try {
+            return Optional.of(Integer.valueOf(number));
+        } catch (NumberFormatException e) {
+            return Optional.empty();
+        }
     }
 
     private static boolean startsWithAny(String number, IntervalType type) {
         return Stream.of(type.numbers()).anyMatch(number::startsWith);
-    }
-
-    public static void main(String[] args) {
-        String numbers = "9350123\n" +
-                "9351123\n" +
-                "9352123\n" +
-                "9353123\n" +
-                "9359123";
-        IntervalService service = new IntervalService();
-        Map<IntervalType, String> intervals = service.getIntervals(numbers);
-        System.out.println(intervals);
     }
 }
