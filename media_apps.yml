@@ -4,7 +4,7 @@ services:
     container_name: compose_qbittorrent
     environment:
       - PUID=500
-      - PGID=100
+      - PGID=0
       - TZ=Europe/London
       - WEBUI_PORT=6363
     volumes:
@@ -19,10 +19,10 @@ services:
 
   jackett:
     image: lscr.io/linuxserver/jackett:latest
-    container_name: jackett
+    container_name: compose_jackett
     environment:
       - PUID=500
-      - PGID=100
+      - PGID=0
       - TZ=Europe/London
       - AUTO_UPDATE=true #optional
       - RUN_OPTS= #optional
@@ -48,7 +48,7 @@ services:
       - /share/Download/complete:/share/CACHEDEV1_DATA/download/complete
     environment:
       - PUID=500
-      - PGID=100
+      - PGID=0
       - TZ=Europe/London
     image: lscr.io/linuxserver/sonarr:latest
     depends_on:
@@ -65,10 +65,11 @@ services:
     volumes:
       - /share/Configurations/radarr_config:/config
       - /share/MediaRaid5/Movies Library:/movies
+      - /share/Media12TB/Movies Library:/movies2TB
       - /share/Download/complete:/share/CACHEDEV1_DATA/download/complete
     environment:
       - PUID=500
-      - PGID=100
+      - PGID=0
       - TZ=Europe/London
     image: lscr.io/linuxserver/radarr:latest
     depends_on:
@@ -82,7 +83,7 @@ services:
     container_name: compose_bazarr
     environment:
       - PUID=500
-      - PGID=100
+      - PGID=0
       - TZ=Europe/London
     volumes:
       - /share/Configurations/bazarr_config:/config
@@ -111,4 +112,3 @@ services:
     restart: unless-stopped
     links:
       - qbittorrent
-#/movies/Movies Library
