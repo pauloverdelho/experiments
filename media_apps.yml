@@ -64,8 +64,8 @@ services:
       - 7878:7878/tcp
     volumes:
       - /share/Configurations/radarr_config:/config
-      - /share/MediaRaid5/Movies Library:/movies
-      - /share/Media12TB/Movies Library:/movies2TB
+      - /share/Media12TB/Movies Library:/movies
+      - /share/Media4TB/Movies:/movies4tb
       - /share/Download/complete:/share/CACHEDEV1_DATA/download/complete
     environment:
       - PUID=500
@@ -87,7 +87,8 @@ services:
       - TZ=Europe/London
     volumes:
       - /share/Configurations/bazarr_config:/config
-      - /share/MediaRaid5/Movies Library:/movies #optional
+      - /share/Media12TB/Movies Library:/movies
+      - /share/Media4TB/Movies:/movies4tb
       - /share/Media4TB/TV Series:/tv #optional
     ports:
       - 6767:6767/tcp
